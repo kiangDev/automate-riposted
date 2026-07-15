@@ -3,6 +3,7 @@ import os
 import time
 import traceback
 
+from pywinauto import findwindows
 from pywinauto.application import Application
 from pywinauto.keyboard import send_keys
 from pywinauto.timings import TimeoutError as PywinautoTimeoutError
@@ -376,13 +377,27 @@ def main():
     print("กำลังเชื่อมต่อโปรแกรม Riposte...")
 
     try:
+        # แก้: เพิ่ม visible_only=True กัน error ElementAmbiguousError ตอนมี
+        # หน้าต่างที่ title แมตช์ ".*Riposte.*" มากกว่า 1 ตัวพร้อมกัน (เช่น
+        # หน้าต่างซ่อน/หน้าต่างค้างจากการรันครั้งก่อน) -- เอาเฉพาะตัวที่
+        # มองเห็นอยู่จริงบนจอเท่านั้น
         app = Application(backend="uia").connect(
-            title_re=r".*Riposte.*", timeout=15
+            title_re=r".*Riposte.*", timeout=15, visible_only=True
         )
-        main_window = app.window(title_re=r".*Riposte.*")
+        main_window = app.window(title_re=r".*Riposte.*", visible_only=True)
         main_window.wait("exists visible", timeout=15)
         main_window.set_focus()
         export_controls(main_window)
+
+    except findwindows.ElementAmbiguousError:
+        print(
+            "เชื่อมต่อโปรแกรมไม่ได้: มีหน้าต่างชื่อคล้าย 'Riposte' เปิดอยู่ "
+            "มากกว่า 1 หน้าต่างพร้อมกัน (อาจเป็นหน้าต่างค้างจากการรันครั้งก่อน) "
+            "กรุณาปิดหน้าต่าง Riposte ที่ไม่ได้ใช้ทิ้งให้เหลือหน้าต่างเดียว "
+            "แล้วรันสคริปต์ใหม่"
+        )
+        traceback.print_exc()
+        return
 
     except Exception:
         print("เชื่อมต่อโปรแกรมไม่ได้ กรุณาตรวจสอบว่าเปิด Riposte อยู่")
