@@ -1,243 +1,28 @@
-import csv
-import os
-import time
-import traceback
+"""
+เครื่องมือช่วย debug: dump control tree ของหน้าจอ Riposte ปัจจุบัน
 
+วิธีใช้:
+1. เปิดโปรแกรม Riposte ค้างไว้
+2. เลื่อน/คลิกไปหน้าที่ต้องการดู (ด้วยมือ ปกติ) เช่น หน้าเลือกกล่อง,
+   หน้ากรอกน้ำหนัก, หน้ากรอกที่อยู่ ฯลฯ
+3. รันสคริปต์นี้ (python dump_screen.py หรือใส่ชื่อไฟล์ output เอง เช่น
+   python dump_screen.py screen_box_select.txt)
+4. จะได้ไฟล์ .txt ที่มี control tree ของหน้าจอ ณ ตอนนั้น -> ส่งไฟล์นั้นมาดูได้เลย
+
+แนะนำ: ทำแบบนี้ทีละหน้า ไล่ตาม flow ทั้งหมด (เลือกกล่อง, ถัดไป, ยืนยัน,
+น้ำหนัก, รหัสไปรษณีย์, เลือกบริการ EMS, ที่อยู่, ชื่อ-นามสกุล-เบอร์โทร)
+แล้วส่งไฟล์ทั้งหมดมาในคราวเดียว จะได้แก้ auto_id ให้ครบทุกจุดในรอบเดียว
+ไม่ต้องรอ fail ทีละจุด
+"""
+
+import sys
 from pywinauto.application import Application
-from pywinauto.keyboard import send_keys
-from pywinauto.timings import TimeoutError as PywinautoTimeoutError
-
-
-CSV_FILENAME = "data.csv"
-LOG_FILENAME = "success_log.txt"
-CONTROLS_FILENAME = "controls.txt"
-
-# ค่า default ใช้เมื่อ CSV ไม่มีคอลัมน์ หรือช่องนั้นว่าง
-DEFAULT_PHONE_NUMBER = "0987654321"
-DEFAULT_WEIGHT = "500"
-DEFAULT_ADDRESS_SEARCH = "88"
-
-# ---------------------------------------------------------------
-# TODO: หลังรันครั้งแรกแล้วเปิด controls.txt ขึ้นมาดู ให้หา title
-# ของ control/ข้อความที่ปรากฏ "เฉพาะตอนพิมพ์สำเร็จ" เท่านั้น
-# (เช่น ป้ายข้อความ "พิมพ์สำเร็จ", "เสร็จสิ้น", ปุ่ม "พิมพ์ใบปะหน้าใหม่" ฯลฯ)
-# แล้วนำมาแทนที่ regex ด้านล่างนี้ให้ตรงกับของจริง
-# ---------------------------------------------------------------
-SUCCESS_TITLE_RE = r".*(สำเร็จ|เสร็จสิ้น|พิมพ์เสร็จ).*"
-SUCCESS_WAIT_TIMEOUT = 10
-
-# ปุ่ม/เมนู "จุดเริ่มต้น" (รับฝากสิ่งของ) ที่ใช้ยืนยันว่ากลับมาหน้าแรกได้จริง
-# หมายเหตุ: แอป Riposte ส่งค่า title ภาษาไทยออกมาทาง UI Automation แบบเพี้ยน
-# (mojibake) ทำให้ค้นหาด้วย title_re ภาษาไทยไม่ได้ผล -> ใช้ auto_id แทน
-HOME_AUTO_ID = "Shipping"
-HOME_CONTROL_TYPE = "ListItem"
-
-
-def load_processed_data(log_filename=LOG_FILENAME):
-    """อ่านรายการที่ทำสำเร็จแล้วจากไฟล์ log"""
-    processed = set()
-
-    if not os.path.exists(log_filename):
-        return processed
-
-    with open(log_filename, "r", encoding="utf-8-sig") as file:
-        for line in file:
-            identifier = line.strip()
-            if identifier:
-                processed.add(identifier)
-
-    return processed
-
-
-def clean_value(value):
-    """แปลงค่า CSV เป็นข้อความและตัดช่องว่าง"""
-    if value is None:
-        return ""
-    return str(value).strip()
-
-
-def value_or_default(value, default):
-    """คืนค่าจาก CSV ถ้ามี ไม่งั้นใช้ค่า default"""
-    cleaned = clean_value(value)
-    return cleaned if cleaned else default
-
-
-def dump_controls_on_failure(window, tag):
-    """
-    เมื่อหา control ไม่เจอ ให้ dump control tree ปัจจุบันลงไฟล์แยก
-    เพื่อเทียบกับ title_re/regex ที่ใช้ค้นหา ช่วย debug ได้เร็วขึ้น
-    """
-    filename = f"controls_fail_{tag}.txt"
-    try:
-        window.print_control_identifiers(filename=filename)
-        print(f"[DEBUG] บันทึก control tree ตอน fail ลง {filename} แล้ว "
-              f"-> เปิดไฟล์นี้เทียบกับ title_re ที่ใช้ค้นหา")
-    except Exception as dump_error:
-        print(f"[WARNING] dump control tree ไม่สำเร็จ: {dump_error}")
-
-
-def wait_and_click(window, timeout=15, wait_states="exists visible enabled", **criteria):
-    print(f"[DEBUG] กำลังค้นหา control: {criteria}")
-    try:
-        control = window.child_window(**criteria)
-        control.wait(wait_states, timeout=timeout)
-        wrapper = control.wrapper_object()
-
-        print("[DEBUG] พบ control")
-        print(f"        title        = {wrapper.window_text()!r}")
-        print(f"        control_type = {wrapper.element_info.control_type!r}")
-        print(f"        automation_id= {wrapper.element_info.automation_id!r}")
-
-        wrapper.click_input()
-        return wrapper
-
-    except Exception as error:
-        print(f"[ERROR] หา/คลิก control ไม่สำเร็จ: {criteria}")
-        print(f"[ERROR] {type(error).__name__}: {error}")
-        tag = criteria.get("title_re") or criteria.get("title") or criteria.get("auto_id") or "unknown"
-        safe_tag = "".join(ch for ch in str(tag) if ch.isalnum())[:30] or "unknown"
-        dump_controls_on_failure(window, safe_tag)
-        raise
-
-
-def fill_edit(window, value, timeout=15, **criteria):
-    """รอช่องกรอก ล้างข้อมูลเดิม แล้วกรอกค่าใหม่ (แก้ให้ target wrapper แทน global keys)"""
-    print(f"[DEBUG] กำลังค้นหาช่องกรอก: {criteria}")
-
-    try:
-        control = window.child_window(**criteria)
-        control.wait("exists visible enabled", timeout=timeout)
-
-        wrapper = control.wrapper_object()
-        wrapper.click_input()
-
-        print("[DEBUG] พบช่องกรอก")
-        print(f"        title        = {wrapper.window_text()!r}")
-        print(f"        control_type = {wrapper.element_info.control_type!r}")
-        print(f"        automation_id= {wrapper.element_info.automation_id!r}")
-
-        try:
-            wrapper.set_edit_text(str(value))
-
-        except Exception:
-            # แก้: ส่ง key ไปที่ wrapper โดยตรง ไม่ใช้ global send_keys
-            # เพื่อป้องกันพิมพ์ผิดหน้าต่างถ้า focus หลุด
-            wrapper.type_keys("^a{BACKSPACE}")
-            wrapper.type_keys(
-                str(value),
-                with_spaces=True,
-                set_foreground=True,
-            )
-
-        return wrapper
-
-    except Exception as error:
-        print(f"[ERROR] กรอกข้อมูลไม่สำเร็จ: {criteria}")
-        print(f"[ERROR] ค่าที่ต้องการกรอก: {value!r}")
-        print(f"[ERROR] {type(error).__name__}: {error}")
-        raise
-
-
-def click_next(window):
-    """กดปุ่มถัดไป"""
-    wait_and_click(window, title_re=r"^ถัดไป$")
-    time.sleep(1)
-
-
-def validate_csv_headers(fieldnames):
-    """ตรวจสอบว่า CSV มี Header ที่จำเป็นครบหรือไม่"""
-    required_headers = {"PostalCode", "FirstName", "LastName"}
-    actual_headers = set(fieldnames or [])
-    missing_headers = required_headers - actual_headers
-
-    if missing_headers:
-        missing_text = ", ".join(sorted(missing_headers))
-        raise ValueError(
-            f"CSV ขาด Header ที่จำเป็น: {missing_text}\n"
-            f"Header ที่พบ: {fieldnames}"
-        )
-
-    optional_headers = {"Address", "Phone", "Weight"}
-    missing_optional = optional_headers - actual_headers
-    if missing_optional:
-        missing_text = ", ".join(sorted(missing_optional))
-        print(
-            f"[WARNING] ไม่พบคอลัมน์ที่แนะนำให้เพิ่ม: {missing_text} "
-            f"-> จะใช้ค่า default แทนสำหรับคอลัมน์ที่ขาด"
-        )
-
-
-def is_control_visible(window, timeout=3, **criteria):
-    """เช็คว่า control ปรากฏอยู่จริงหรือไม่ โดยไม่ throw ถ้าไม่เจอ"""
-    try:
-        control = window.child_window(**criteria)
-        control.wait("exists visible", timeout=timeout)
-        return True
-    except Exception:
-        return False
-
-
-def wait_for_success(window, timeout=SUCCESS_WAIT_TIMEOUT):
-    """
-    ตรวจสอบว่าถึงหน้า/ข้อความยืนยันความสำเร็จจริงหรือไม่
-    ก่อนจะถือว่ารายการนี้ทำสำเร็จ
-    """
-    print("[DEBUG] กำลังตรวจสอบหน้าจอยืนยันความสำเร็จ...")
-    if is_control_visible(window, timeout=timeout, title_re=SUCCESS_TITLE_RE):
-        print("[DEBUG] พบสัญญาณความสำเร็จ")
-        return True
-
-    print("[WARNING] ไม่พบสัญญาณความสำเร็จภายในเวลาที่กำหนด")
-    return False
-
-
-def recover_ui(main_window, max_attempts=5):
-    """
-    พยายามปิด popup ด้วย ESC แล้ว 'ยืนยัน' ว่ากลับมาหน้าแรกจริง
-    ก่อนปล่อยให้ลูปไปทำรายการถัดไป ป้องกัน error ไล่กันเป็นทอดๆ
-    """
-    print("[DEBUG] กำลังพยายามกู้คืนหน้าจอ")
-
-    try:
-        main_window.set_focus()
-    except Exception:
-        pass
-
-    for attempt in range(1, max_attempts + 1):
-        send_keys("{ESC}")
-        time.sleep(0.7)
-
-        if is_control_visible(
-            main_window,
-            timeout=2,
-            auto_id=HOME_AUTO_ID,
-            control_type=HOME_CONTROL_TYPE,
-        ):
-            print(f"[DEBUG] กลับมาหน้าแรกสำเร็จ (ครั้งที่ {attempt})")
-            return True
-
-    print(
-        "[ERROR] กู้คืนหน้าจอไม่สำเร็จ ไม่พบหน้าแรกหลังกด ESC "
-        f"{max_attempts} ครั้ง -- ควรหยุดสคริปต์และตรวจสอบหน้าจอด้วยตนเอง"
-    )
-    return False
-
-
-def export_controls(main_window):
-    """บันทึกรายชื่อ control ทั้งหมดลง controls.txt (ใช้ตรวจ title/control_type/auto_id จริง)"""
-    try:
-        main_window.print_control_identifiers(filename=CONTROLS_FILENAME)
-        print(f"[DEBUG] บันทึกรายชื่อ control ลง {CONTROLS_FILENAME} แล้ว")
-    except Exception as error:
-        print(f"[WARNING] ไม่สามารถสร้าง {CONTROLS_FILENAME} ได้: {error}")
 
 
 def main():
-    completed_names = load_processed_data()
+    output_filename = sys.argv[1] if len(sys.argv) > 1 else "screen_dump.txt"
 
-    print(f"พบประวัติที่ทำสำเร็จแล้ว: {len(completed_names)} รายการ")
     print("กำลังเชื่อมต่อโปรแกรม Riposte...")
-
     try:
         app = Application(backend="uia").connect(
             title_re=r".*Riposte.*", timeout=15
@@ -245,175 +30,17 @@ def main():
         main_window = app.window(title_re=r".*Riposte.*")
         main_window.wait("exists visible", timeout=15)
         main_window.set_focus()
-        export_controls(main_window)
-
-    except Exception:
-        print("เชื่อมต่อโปรแกรมไม่ได้ กรุณาตรวจสอบว่าเปิด Riposte อยู่")
-        traceback.print_exc()
+    except Exception as error:
+        print(f"เชื่อมต่อไม่สำเร็จ: {error}")
+        print("ตรวจสอบว่าเปิดโปรแกรม Riposte อยู่หรือไม่")
         return
 
-    print(f"กำลังเปิดไฟล์ข้อมูล {CSV_FILENAME}...")
-
     try:
-        with open(
-            CSV_FILENAME, mode="r", encoding="utf-8-sig", newline=""
-        ) as csv_file:
-
-            csv_reader = csv.DictReader(csv_file)
-            validate_csv_headers(csv_reader.fieldnames)
-
-            with open(LOG_FILENAME, mode="a", encoding="utf-8-sig") as log_file:
-
-                for index, row in enumerate(csv_reader, start=1):
-                    zip_code = clean_value(row.get("PostalCode"))
-                    first_name = clean_value(row.get("FirstName"))
-                    last_name = clean_value(row.get("LastName"))
-
-                    # แก้: ดึงค่าจาก CSV ถ้ามี ไม่งั้น fallback ไปค่า default
-                    address_search = value_or_default(
-                        row.get("Address"), DEFAULT_ADDRESS_SEARCH
-                    )
-                    phone_number = value_or_default(
-                        row.get("Phone"), DEFAULT_PHONE_NUMBER
-                    )
-                    weight = value_or_default(
-                        row.get("Weight"), DEFAULT_WEIGHT
-                    )
-
-                    unique_identifier = f"{first_name}|{last_name}|{zip_code}"
-
-                    if not zip_code or not first_name or not last_name:
-                        print(
-                            f"--- ข้ามรายการที่ {index}: "
-                            "PostalCode, FirstName หรือ LastName ไม่ครบ ---"
-                        )
-                        continue
-
-                    if unique_identifier in completed_names:
-                        print(
-                            f"--- ข้ามรายการที่ {index}: "
-                            f"{first_name} {last_name} (ทำไปแล้ว) ---"
-                        )
-                        continue
-
-                    print(f"--- กำลังทำรายการที่ {index}: {first_name} {last_name} ---")
-
-                    try:
-                        main_window.wait("exists visible enabled", timeout=15)
-                        main_window.set_focus()
-
-                        # หน้าเริ่มต้น (แก้: ใช้ auto_id แทน title ภาษาไทยที่เพี้ยน
-                        # และผ่อนเงื่อนไขเป็น exists+visible เพราะ ListItem
-                        # ในแอปนี้ไม่รายงานสถานะ enabled ผ่าน UI Automation)
-                        wait_and_click(
-                            main_window,
-                            auto_id=HOME_AUTO_ID,
-                            control_type=HOME_CONTROL_TYPE,
-                            wait_states="exists visible",
-                        )
-                        time.sleep(1)
-
-                        wait_and_click(main_window, title_re=r".*กล่องสำเร็จรูป ข.*")
-                        time.sleep(1)
-
-                        click_next(main_window)
-
-                        wait_and_click(main_window, title_re=r"^ยืนยัน$")
-                        time.sleep(1)
-
-                        # น้ำหนัก
-                        fill_edit(main_window, weight, title_re=r".*น้ำหนัก.*")
-                        click_next(main_window)
-
-                        # รหัสไปรษณีย์
-                        fill_edit(
-                            main_window, zip_code, title_re=r".*ระบุรหัสไปรษณีย์?.*"
-                        )
-                        click_next(main_window)
-                        time.sleep(2)
-
-                        # เลือก EMS
-                        # NOTE: ยังใช้ found_index=0 เหมือนเดิม เพราะไม่ทราบ
-                        # automation_id/title ที่แท้จริงของปุ่ม EMS
-                        # ให้เปิด controls.txt ตรวจสอบว่า index 0 คือ EMS จริงหรือไม่
-                        # ถ้ามี title เฉพาะ ควรเปลี่ยนมาใช้ title_re แทน found_index
-                        print("[DEBUG] กำลังค้นหา Image สำหรับ EMS")
-                        ems_image = main_window.child_window(
-                            control_type="Image", found_index=0
-                        )
-                        ems_image.wait("exists visible enabled", timeout=15)
-                        ems_image.wrapper_object().click_input()
-                        time.sleep(1)
-
-                        for round_number in range(1, 4):
-                            print(f"[DEBUG] กดถัดไป รอบที่ {round_number}/3")
-                            click_next(main_window)
-
-                        # ค้นหาและเลือกที่อยู่ (แก้: ใช้ address_search จาก CSV)
-                        fill_edit(main_window, address_search, title_re=r"^ที่อยู่$")
-                        time.sleep(2)
-                        send_keys("{DOWN}")
-                        send_keys("{ENTER}")
-                        time.sleep(1)
-
-                        click_next(main_window)
-
-                        # ข้อมูลผู้รับ
-                        fill_edit(main_window, first_name, title_re=r"^ชื่อ$")
-                        fill_edit(main_window, last_name, title_re=r"^นามสกุล$")
-                        fill_edit(
-                            main_window,
-                            phone_number,  # แก้: ใช้เบอร์จาก CSV
-                            title_re=r".*หมายเลขโทรศัพท์.*",
-                        )
-
-                        # สิ้นสุดกระบวนการ
-                        wait_and_click(main_window, title_re=r"^ไม่$")
-                        time.sleep(2)
-
-                        # แก้: ตรวจสอบหน้า success จริงก่อนบันทึก log
-                        if not wait_for_success(main_window):
-                            raise RuntimeError(
-                                "ไม่พบสัญญาณยืนยันความสำเร็จ -- "
-                                "จะไม่บันทึกรายการนี้ลง log"
-                            )
-
-                        log_file.write(unique_identifier + "\n")
-                        log_file.flush()
-                        completed_names.add(unique_identifier)
-
-                        print(f"ทำรายการที่ {index} สำเร็จ และบันทึกลง Log แล้ว")
-
-                    except PywinautoTimeoutError:
-                        print(f"Timeout ที่รายการ {index}: {first_name} {last_name}")
-                        traceback.print_exc()
-                        if not recover_ui(main_window):
-                            print("[FATAL] หยุดสคริปต์เพราะกู้คืนหน้าจอไม่สำเร็จ")
-                            return
-
-                    except Exception as error:
-                        print(f"เกิดข้อผิดพลาดที่รายการ {index}: {first_name} {last_name}")
-                        print(f"ชนิด Error: {type(error).__name__}")
-                        print(f"รายละเอียด: {error}")
-                        traceback.print_exc()
-                        if not recover_ui(main_window):
-                            print("[FATAL] หยุดสคริปต์เพราะกู้คืนหน้าจอไม่สำเร็จ")
-                            return
-
-    except FileNotFoundError:
-        print(f"ไม่พบไฟล์ {CSV_FILENAME} กรุณาตรวจสอบว่าไฟล์อยู่ในโฟลเดอร์เดียวกับสคริปต์")
-
-    except PermissionError:
-        print(f"ไม่สามารถเปิดไฟล์ {CSV_FILENAME} ได้ กรุณาปิดไฟล์ใน Excel แล้วลองใหม่")
-
-    except ValueError as error:
-        print(f"โครงสร้าง CSV ไม่ถูกต้อง: {error}")
-
-    except Exception:
-        print("เกิดข้อผิดพลาดขณะอ่านหรือประมวลผลไฟล์ CSV")
-        traceback.print_exc()
-
-    print("เสร็จสิ้นการทำงานทั้งหมดแล้ว!")
+        main_window.print_control_identifiers(filename=output_filename)
+        print(f"บันทึก control tree ของหน้าจอปัจจุบันลง '{output_filename}' แล้ว")
+        print("ส่งไฟล์นี้มาดูได้เลยครับ")
+    except Exception as error:
+        print(f"dump ไม่สำเร็จ: {error}")
 
 
 if __name__ == "__main__":
