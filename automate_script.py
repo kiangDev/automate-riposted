@@ -55,7 +55,10 @@ def main():
                     
                     try:
                         # ================= กระบวนการคลิกและพิมพ์ (UI) =================
-                        main_window.child_window(title="รับฝากสิ่งของ").click_input() 
+                        main_window.wait('ready',timeout=10)
+
+                        
+                        main_window.child_window(title="รับฝากสิ่งของ",control_type="Custom").click_input() 
                         time.sleep(1)
 
                         main_window.child_window(title="กล่องสำเร็จรูป ข").click_input()
