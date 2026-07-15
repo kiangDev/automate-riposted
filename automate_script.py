@@ -123,15 +123,51 @@ def wait_and_click(window, timeout=15, wait_states="exists visible enabled", **c
         raise
 
 
+def resolve_edit_wrapper(wrapper, timeout=15):
+    """
+    ยืนยันจาก controls dump หน้ากรอกน้ำหนัก (EG.Shipping.Weight) แล้วว่า
+    title_re ที่ใช้ค้นก่อนหน้านี้ (เช่น r".*น้ำหนัก.*") จะไปแมตช์กับ Static
+    label (auto_id="LabelForTextBox" หรือ "Title"/"MainText") ซึ่งเป็นแค่
+    ป้ายข้อความ ไม่ใช่ช่องกรอกจริง -- ช่องกรอกจริงเป็น control_type="Edit"
+    แยกต่างหาก (เช่น auto_id="EG_WEIGHT_INPUT_ELEMENT") ที่อยู่ใน parent
+    เดียวกันกับ label นั้น (auto_id ลงท้าย "..._UserControlBase")
+
+    เลยต้องเช็คว่า control ที่หาเจอเป็น Edit จริงไหม ถ้าไม่ใช่ ให้ไต่ขึ้นไปหา
+    parent แล้วหา Edit ที่อยู่ข้างเคียงแทน (ใช้ได้กับทุกหน้าที่ใช้ template
+    เดียวกันนี้ โดยไม่ต้องรู้ auto_id เฉพาะของแต่ละหน้า)
+    """
+    if wrapper.element_info.control_type == "Edit":
+        return wrapper
+
+    print(
+        f"[DEBUG] control ที่เจอไม่ใช่ Edit (เป็น {wrapper.element_info.control_type!r}, "
+        f"auto_id={wrapper.element_info.automation_id!r}) -> ลองหา Edit ข้างเคียงแทน"
+    )
+    parent_wrapper = wrapper.parent()
+    for child in parent_wrapper.children():
+        if child.element_info.control_type == "Edit":
+            print(
+                f"[DEBUG] เจอ Edit ข้างเคียง auto_id={child.element_info.automation_id!r}"
+            )
+            return child
+
+    raise RuntimeError(
+        "หา Edit ข้างเคียงไม่เจอ (control ที่แมตช์ title_re/criteria เป็น "
+        f"{wrapper.element_info.control_type!r} และไม่มี Edit อยู่ใน parent เดียวกัน)"
+    )
+
+
 def fill_edit(window, value, timeout=15, **criteria):
     """รอช่องกรอก ล้างข้อมูลเดิม แล้วกรอกค่าใหม่ (แก้ให้ target wrapper แทน global keys)"""
     print(f"[DEBUG] กำลังค้นหาช่องกรอก: {criteria}")
 
     try:
         control = window.child_window(**criteria)
-        control.wait("exists visible enabled", timeout=timeout)
+        control.wait("exists visible", timeout=timeout)
 
-        wrapper = control.wrapper_object()
+        raw_wrapper = control.wrapper_object()
+        # แก้: เผื่อ criteria ที่ส่งมาไปแมตช์ label แทนที่จะเป็น Edit จริง
+        wrapper = resolve_edit_wrapper(raw_wrapper, timeout=timeout)
         wrapper.click_input()
 
         print("[DEBUG] พบช่องกรอก")
@@ -404,12 +440,25 @@ def main():
                         time.sleep(1)
 
                         # น้ำหนัก
-                        fill_edit(main_window, weight, title_re=r".*น้ำหนัก.*")
+                        # แก้: เพิ่ม auto_id="LabelForTextBox" ระบุให้เจาะจงว่า
+                        # เอา label ของช่องกรอก ไม่ใช่ label หัวข้อหน้า (Title)
+                        # ที่ข้อความ "น้ำหนัก" ซ้ำกันอยู่ทั้งสองที่ (ยืนยันจาก
+                        # controls dump หน้า EG.Shipping.Weight) แล้ว
+                        # resolve_edit_wrapper() จะไต่ไปหา Edit ข้างเคียงให้เอง
+                        fill_edit(
+                            main_window,
+                            weight,
+                            title_re=r".*น้ำหนัก.*",
+                            auto_id="LabelForTextBox",
+                        )
                         click_next(main_window)
 
                         # รหัสไปรษณีย์
                         fill_edit(
-                            main_window, zip_code, title_re=r".*ระบุรหัสไปรษณีย์?.*"
+                            main_window,
+                            zip_code,
+                            title_re=r".*ระบุรหัสไปรษณีย์?.*",
+                            auto_id="LabelForTextBox",
                         )
                         click_next(main_window)
                         time.sleep(2)
