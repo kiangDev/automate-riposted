@@ -26,8 +26,11 @@ DEFAULT_ADDRESS_SEARCH = "88"
 SUCCESS_TITLE_RE = r".*(สำเร็จ|เสร็จสิ้น|พิมพ์เสร็จ).*"
 SUCCESS_WAIT_TIMEOUT = 10
 
-# title ของปุ่ม/หน้าจอ "จุดเริ่มต้น" ที่ใช้ยืนยันว่ากลับมาหน้าแรกได้จริง
-HOME_TITLE_RE = r".*รับฝากสิ่งของ.*"
+# ปุ่ม/เมนู "จุดเริ่มต้น" (รับฝากสิ่งของ) ที่ใช้ยืนยันว่ากลับมาหน้าแรกได้จริง
+# หมายเหตุ: แอป Riposte ส่งค่า title ภาษาไทยออกมาทาง UI Automation แบบเพี้ยน
+# (mojibake) ทำให้ค้นหาด้วย title_re ภาษาไทยไม่ได้ผล -> ใช้ auto_id แทน
+HOME_AUTO_ID = "Shipping"
+HOME_CONTROL_TYPE = "ListItem"
 
 
 def load_processed_data(log_filename=LOG_FILENAME):
@@ -59,6 +62,20 @@ def value_or_default(value, default):
     return cleaned if cleaned else default
 
 
+def dump_controls_on_failure(window, tag):
+    """
+    เมื่อหา control ไม่เจอ ให้ dump control tree ปัจจุบันลงไฟล์แยก
+    เพื่อเทียบกับ title_re/regex ที่ใช้ค้นหา ช่วย debug ได้เร็วขึ้น
+    """
+    filename = f"controls_fail_{tag}.txt"
+    try:
+        window.print_control_identifiers(filename=filename)
+        print(f"[DEBUG] บันทึก control tree ตอน fail ลง {filename} แล้ว "
+              f"-> เปิดไฟล์นี้เทียบกับ title_re ที่ใช้ค้นหา")
+    except Exception as dump_error:
+        print(f"[WARNING] dump control tree ไม่สำเร็จ: {dump_error}")
+
+
 def wait_and_click(window, timeout=15, **criteria):
     print(f"[DEBUG] กำลังค้นหา control: {criteria}")
     try:
@@ -77,6 +94,9 @@ def wait_and_click(window, timeout=15, **criteria):
     except Exception as error:
         print(f"[ERROR] หา/คลิก control ไม่สำเร็จ: {criteria}")
         print(f"[ERROR] {type(error).__name__}: {error}")
+        tag = criteria.get("title_re") or criteria.get("title") or "unknown"
+        safe_tag = "".join(ch for ch in str(tag) if ch.isalnum())[:30] or "unknown"
+        dump_controls_on_failure(window, safe_tag)
         raise
 
 
@@ -187,7 +207,12 @@ def recover_ui(main_window, max_attempts=5):
         send_keys("{ESC}")
         time.sleep(0.7)
 
-        if is_control_visible(main_window, timeout=2, title_re=HOME_TITLE_RE):
+        if is_control_visible(
+            main_window,
+            timeout=2,
+            auto_id=HOME_AUTO_ID,
+            control_type=HOME_CONTROL_TYPE,
+        ):
             print(f"[DEBUG] กลับมาหน้าแรกสำเร็จ (ครั้งที่ {attempt})")
             return True
 
@@ -277,8 +302,12 @@ def main():
                         main_window.wait("exists visible enabled", timeout=15)
                         main_window.set_focus()
 
-                        # หน้าเริ่มต้น
-                        wait_and_click(main_window, title_re=HOME_TITLE_RE)
+                        # หน้าเริ่มต้น (แก้: ใช้ auto_id แทน title ภาษาไทยที่เพี้ยน)
+                        wait_and_click(
+                            main_window,
+                            auto_id=HOME_AUTO_ID,
+                            control_type=HOME_CONTROL_TYPE,
+                        )
                         time.sleep(1)
 
                         wait_and_click(main_window, title_re=r".*กล่องสำเร็จรูป ข.*")
