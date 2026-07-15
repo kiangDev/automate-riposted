@@ -463,17 +463,16 @@ def main():
                         click_next(main_window)
                         time.sleep(2)
 
-                        # เลือก EMS
-                        # NOTE: ยังใช้ found_index=0 เหมือนเดิม เพราะไม่ทราบ
-                        # automation_id/title ที่แท้จริงของปุ่ม EMS
-                        # ให้เปิด controls.txt ตรวจสอบว่า index 0 คือ EMS จริงหรือไม่
-                        # ถ้ามี title เฉพาะ ควรเปลี่ยนมาใช้ title_re แทน found_index
-                        print("[DEBUG] กำลังค้นหา Image สำหรับ EMS")
-                        ems_image = main_window.child_window(
-                            control_type="Image", found_index=0
-                        )
-                        ems_image.wait("exists visible enabled", timeout=15)
-                        ems_image.wrapper_object().click_input()
+                        # เลือกบริการ (เดิมเดา found_index=0 ไม่แม่นยำ/กดไม่ติด
+                        # -- ผู้ใช้เช็คจากหน้าจอจริงแล้วว่าตัวเลือกที่ต้องกด
+                        # มี hotkey เป็นเลข "0" กำกับอยู่ เหมือนหน้าเลือกกล่อง
+                        # (MailPieceShape) ที่แต่ละตัวเลือกมี HotkeyTextBlock
+                        # เป็นเลขกำกับให้กดตรงๆ ได้ -- ยังไม่มี controls dump
+                        # ของหน้านี้มายืนยัน auto_id เลยใช้วิธีส่ง hotkey ตรงๆ
+                        # แทน ถ้าเจอปัญหากดไม่ติดอีก ให้ dump หน้านี้มาดู)
+                        print("[DEBUG] กำลังเลือกบริการด้วย hotkey '0'")
+                        main_window.set_focus()
+                        main_window.type_keys("0")
                         time.sleep(1)
 
                         for round_number in range(1, 4):
