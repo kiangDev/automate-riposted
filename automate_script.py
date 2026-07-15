@@ -16,7 +16,13 @@ CONTROLS_FILENAME = "controls.txt"
 # ค่า default ใช้เมื่อ CSV ไม่มีคอลัมน์ หรือช่องนั้นว่าง
 DEFAULT_PHONE_NUMBER = "0987654321"
 DEFAULT_WEIGHT = "500"
-DEFAULT_ADDRESS_SEARCH = "88"
+DEFAULT_ADDRESS_SEARCH = "11"
+
+# แก้: ค่าเดียว "88" ใช้ได้แค่กับรหัสไปรษณีย์ที่มีเลขที่ตรงพอดี (เจอปัญหาจริง
+# ว่ารหัสไปรษณีย์อื่นค้นหา "88" แล้วไม่มีผลลัพธ์เลย) เนื่องจากเป็นข้อมูล mock
+# ไม่ใช่ที่อยู่จริงของผู้รับ (ยืนยันจากผู้ใช้แล้วว่าใช้เลขที่ใกล้เคียงแทนได้)
+# เลยลองไล่ทีละค่าจากรายการนี้แทน ค่าไหนเจอผลลัพธ์ก่อนก็ใช้ค่านั้น
+ADDRESS_SEARCH_FALLBACK_CANDIDATES = ["11", "12", "88", "1", "2", "10"]
 
 # ---------------------------------------------------------------
 # TODO: หลังรันครั้งแรกแล้วเปิด controls.txt ขึ้นมาดู ให้หา title
@@ -261,6 +267,54 @@ def report_validation_errors(window, timeout=1):
         pass
 
 
+def search_and_select_address(window, primary_search_term, timeout_per_try=6):
+    """
+    ค้นหาที่อยู่แล้วเลือกผลลัพธ์แรก -- ลอง primary_search_term (จาก CSV หรือ
+    DEFAULT_ADDRESS_SEARCH) ก่อน ถ้าค้นแล้วไม่มีผลลัพธ์เลย (เช่นรหัสไปรษณีย์
+    แถวนี้ไม่มีเลขที่ตรงกับที่ลองค้น) ให้ไล่ลองค่าถัดไปใน
+    ADDRESS_SEARCH_FALLBACK_CANDIDATES จนกว่าจะเจอ หรือหมดรายการ
+    """
+    search_terms = [primary_search_term] + [
+        term for term in ADDRESS_SEARCH_FALLBACK_CANDIDATES if term != primary_search_term
+    ]
+
+    last_error = None
+    for term in search_terms:
+        print(f"[DEBUG] กำลังค้นหาที่อยู่ด้วยคำว่า {term!r}")
+        try:
+            fill_edit(
+                window,
+                term,
+                title_re=r"^ที่อยู่$",
+                auto_id="LabelForTextBox",
+            )
+            time.sleep(2)
+
+            address_result_group = window.child_window(
+                auto_id="AddressResult", control_type="Group"
+            )
+            address_result_group.wait("exists visible", timeout=timeout_per_try)
+
+            first_address_result = address_result_group.child_window(
+                control_type="ListItem", found_index=0
+            )
+            first_address_result.wait("exists visible", timeout=timeout_per_try)
+            first_address_result.wrapper_object().click_input()
+            time.sleep(1)
+
+            print(f"[DEBUG] ค้นหาที่อยู่ด้วยคำว่า {term!r} เจอผลลัพธ์ -> เลือกตัวแรกแล้ว")
+            return True
+
+        except Exception as error:
+            last_error = error
+            print(f"[DEBUG] ค้นหาที่อยู่ด้วยคำว่า {term!r} ไม่เจอผลลัพธ์ ลองคำถัดไป")
+
+    print(f"[ERROR] ลองค้นหาที่อยู่ทุกคำใน {search_terms} แล้วไม่เจอผลลัพธ์เลย")
+    if last_error:
+        raise last_error
+    raise RuntimeError("ค้นหาที่อยู่ไม่เจอผลลัพธ์เลยสักคำ")
+
+
 def validate_csv_headers(fieldnames):
     """ตรวจสอบว่า CSV มี Header ที่จำเป็นครบหรือไม่"""
     required_headers = {"PostalCode", "FirstName", "LastName"}
@@ -377,24 +431,26 @@ def main():
     print("กำลังเชื่อมต่อโปรแกรม Riposte...")
 
     try:
-        # แก้: เพิ่ม visible_only=True กัน error ElementAmbiguousError ตอนมี
-        # หน้าต่างที่ title แมตช์ ".*Riposte.*" มากกว่า 1 ตัวพร้อมกัน (เช่น
-        # หน้าต่างซ่อน/หน้าต่างค้างจากการรันครั้งก่อน) -- เอาเฉพาะตัวที่
-        # มองเห็นอยู่จริงบนจอเท่านั้น
+        # แก้: title_re=".*Riposte.*" ยังชนกัน 2 ตัวแม้ใส่ visible_only=True
+        # แล้ว (แปลว่ามีหน้าต่างที่มองเห็นอยู่จริง ชื่อมีคำว่า Riposte ซ้อนกัน
+        # 2 อันจริงๆ) เปลี่ยนมาค้นด้วย auto_id="ECPMainWindow" แทน เพราะจาก
+        # controls dump ทุกครั้งที่ผ่านมา auto_id นี้เจาะจงเฉพาะหน้าต่างหลัก
+        # ตัวจริงเท่านั้น (child_window(title="Riposte POS Application",
+        # auto_id="ECPMainWindow", control_type="Window"))
         app = Application(backend="uia").connect(
-            title_re=r".*Riposte.*", timeout=15, visible_only=True
+            auto_id="ECPMainWindow", timeout=15, visible_only=True
         )
-        main_window = app.window(title_re=r".*Riposte.*", visible_only=True)
+        main_window = app.window(auto_id="ECPMainWindow", visible_only=True)
         main_window.wait("exists visible", timeout=15)
         main_window.set_focus()
         export_controls(main_window)
 
     except findwindows.ElementAmbiguousError:
         print(
-            "เชื่อมต่อโปรแกรมไม่ได้: มีหน้าต่างชื่อคล้าย 'Riposte' เปิดอยู่ "
-            "มากกว่า 1 หน้าต่างพร้อมกัน (อาจเป็นหน้าต่างค้างจากการรันครั้งก่อน) "
-            "กรุณาปิดหน้าต่าง Riposte ที่ไม่ได้ใช้ทิ้งให้เหลือหน้าต่างเดียว "
-            "แล้วรันสคริปต์ใหม่"
+            "เชื่อมต่อโปรแกรมไม่ได้: มีหน้าต่างหลักของ Riposte เปิดอยู่จริง "
+            "มากกว่า 1 หน้าต่างพร้อมกัน (ลองเช็ค taskbar ว่าเปิด Riposte "
+            "ซ้อนกันกี่หน้าต่าง) กรุณาปิดหน้าต่างที่ไม่ได้ใช้ทิ้งให้เหลือ "
+            "หน้าต่างเดียว แล้วรันสคริปต์ใหม่"
         )
         traceback.print_exc()
         return
@@ -520,42 +576,12 @@ def main():
                             print(f"[DEBUG] กดถัดไป รอบที่ {round_number}/3")
                             click_next(main_window)
 
-                        # ค้นหาและเลือกที่อยู่ (แก้: ใช้ address_search จาก CSV)
-                        # เพิ่ม auto_id="LabelForTextBox" เหมือนหน้าน้ำหนัก/
-                        # รหัสไปรษณีย์ กันแมตช์โดน label หัวข้อหน้าแทนช่องกรอกจริง
-                        # (resolve_edit_wrapper() ใน fill_edit จะไต่หา Edit
-                        # ข้างเคียงให้เองอยู่แล้ว แต่ระบุ auto_id ไว้ด้วยช่วยให้
-                        # เจาะจงถูกจุดตั้งแต่แรก ไม่ไปแมตช์ label อื่นที่ข้อความ
-                        # อาจซ้ำกัน)
-                        address_edit_wrapper = fill_edit(
-                            main_window,
-                            address_search,
-                            title_re=r"^ที่อยู่$",
-                            auto_id="LabelForTextBox",
-                        )
-                        time.sleep(2)
-
-                        # แก้: ยืนยันจาก controls dump จริงแล้วว่าผลค้นหาที่อยู่
-                        # เป็นหน้าแยกต่างหาก (EG.CustomerCapture.
-                        # AddressSearchResultsView) ไม่ใช่ dropdown ลอยเหนือ
-                        # ช่องกรอก -- แต่ละผลลัพธ์เป็น ListItem ที่ auto_id
-                        # ถูกตั้งเป็นข้อความที่อยู่เพี้ยนภาษาไทยเอง (ไม่ใช่ ID
-                        # คงที่) เลยแมตช์ด้วย title/auto_id ไม่ได้ แต่ทุกผลลัพธ์
-                        # อยู่ใน Group เดียวกัน (auto_id="AddressResult") เลย
-                        # เลือกตัวแรกในกลุ่มนี้ด้วย found_index=0 แทน (เชื่อถือ
-                        # ได้กว่าเพราะ scope แคบแค่ในกลุ่มผลลัพธ์ที่อยู่เท่านั้น)
-                        address_result_group = main_window.child_window(
-                            auto_id="AddressResult", control_type="Group"
-                        )
-                        address_result_group.wait("exists visible", timeout=10)
-
-                        first_address_result = address_result_group.child_window(
-                            control_type="ListItem", found_index=0
-                        )
-                        first_address_result.wait("exists visible", timeout=10)
-                        first_address_result.wrapper_object().click_input()
-                        time.sleep(1)
-
+                        # ค้นหาและเลือกที่อยู่ (แก้: ใช้ address_search จาก CSV
+                        # เป็นคำค้นหาแรก ถ้าไม่เจอผลลัพธ์ จะไล่ลองคำถัดไปใน
+                        # ADDRESS_SEARCH_FALLBACK_CANDIDATES ให้เอง เพราะข้อมูล
+                        # เป็น mock ไม่ใช่ที่อยู่จริง เลขที่เดียวอาจไม่ตรงกับ
+                        # ทุกรหัสไปรษณีย์)
+                        search_and_select_address(main_window, address_search)
                         click_next(main_window)
 
                         # ข้อมูลผู้รับ

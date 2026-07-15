@@ -48,12 +48,13 @@ def main():
 
     print("กำลังเชื่อมต่อโปรแกรม Riposte...")
     try:
-        # แก้: เพิ่ม visible_only=True กัน ElementAmbiguousError ถ้ามีหน้าต่าง
-        # ชื่อคล้าย "Riposte" มากกว่า 1 ตัว (เช่นหน้าต่างซ่อน/ค้างจากรอบก่อน)
+        # แก้: title_re=".*Riposte.*" ชนกัน 2 ตัวแม้ visible_only=True แล้ว
+        # เปลี่ยนมาใช้ auto_id="ECPMainWindow" แทน (เจาะจงเฉพาะหน้าต่างหลัก
+        # ตัวจริงเท่านั้น ยืนยันจาก controls dump ที่ผ่านมาทุกครั้ง)
         app = Application(backend="uia").connect(
-            title_re=r".*Riposte.*", timeout=15, visible_only=True
+            auto_id="ECPMainWindow", timeout=15, visible_only=True
         )
-        main_window = app.window(title_re=r".*Riposte.*", visible_only=True)
+        main_window = app.window(auto_id="ECPMainWindow", visible_only=True)
         main_window.wait("exists visible", timeout=15)
         main_window.set_focus()
     except Exception as error:
