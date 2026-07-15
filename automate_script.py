@@ -493,15 +493,20 @@ def main():
                         # ข้างเคียงให้เองอยู่แล้ว แต่ระบุ auto_id ไว้ด้วยช่วยให้
                         # เจาะจงถูกจุดตั้งแต่แรก ไม่ไปแมตช์ label อื่นที่ข้อความ
                         # อาจซ้ำกัน)
-                        fill_edit(
+                        address_edit_wrapper = fill_edit(
                             main_window,
                             address_search,
                             title_re=r"^ที่อยู่$",
                             auto_id="LabelForTextBox",
                         )
                         time.sleep(2)
-                        send_keys("{DOWN}")
-                        send_keys("{ENTER}")
+                        # แก้: เลือกที่อยู่ตัวแรกในรายการ dropdown ที่ขึ้นมาหลัง
+                        # พิมพ์ค้นหา -- เดิมใช้ send_keys global ซึ่งเสี่ยงพิมพ์
+                        # ผิดหน้าต่างถ้า focus หลุด (ปัญหาเดียวกับที่แก้ไปแล้ว
+                        # ใน fill_edit) เปลี่ยนมาส่ง key ไปที่ wrapper ของช่อง
+                        # กรอกที่อยู่โดยตรงแทน
+                        address_edit_wrapper.type_keys("{DOWN}")
+                        address_edit_wrapper.type_keys("{ENTER}")
                         time.sleep(1)
 
                         click_next(main_window)
