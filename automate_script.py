@@ -22,7 +22,7 @@ DEFAULT_ADDRESS_SEARCH = "11"
 # ว่ารหัสไปรษณีย์อื่นค้นหา "88" แล้วไม่มีผลลัพธ์เลย) เนื่องจากเป็นข้อมูล mock
 # ไม่ใช่ที่อยู่จริงของผู้รับ (ยืนยันจากผู้ใช้แล้วว่าใช้เลขที่ใกล้เคียงแทนได้)
 # เลยลองไล่ทีละค่าจากรายการนี้แทน ค่าไหนเจอผลลัพธ์ก่อนก็ใช้ค่านั้น
-ADDRESS_SEARCH_FALLBACK_CANDIDATES = 88
+ADDRESS_SEARCH_FALLBACK_CANDIDATES = ["11", "12", "88", "1", "2", "10"]
 
 # ---------------------------------------------------------------
 # TODO: หลังรันครั้งแรกแล้วเปิด controls.txt ขึ้นมาดู ให้หา title
@@ -314,7 +314,12 @@ def search_and_select_address(window, primary_search_term, timeout_per_try=12):
                 auto_id="LabelForTextBox",
                 force_type_keys=True,
             )
-            time.sleep(2)
+            time.sleep(1)
+
+            # แก้: พิมพ์คำค้นหาอย่างเดียวไม่พอ ต้องกด "ถัดไป"/submit ก่อน
+            # หน้าผลลัพธ์ถึงจะขึ้น (ผู้ใช้ทดสอบด้วยมือแล้วยืนยันตรงนี้)
+            click_next(window)
+            time.sleep(1)
 
             address_result_group = window.child_window(
                 auto_id="AddressResult", control_type="Group"
