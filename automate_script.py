@@ -172,8 +172,17 @@ def resolve_edit_wrapper(wrapper, timeout=15):
     )
 
 
-def fill_edit(window, value, timeout=15, **criteria):
-    """รอช่องกรอก ล้างข้อมูลเดิม แล้วกรอกค่าใหม่ (แก้ให้ target wrapper แทน global keys)"""
+def fill_edit(window, value, timeout=15, force_type_keys=False, **criteria):
+    """
+    รอช่องกรอก ล้างข้อมูลเดิม แล้วกรอกค่าใหม่
+
+    force_type_keys=True: ข้าม set_edit_text() ไปเลย บังคับใช้ type_keys()
+    (จำลองการพิมพ์จริง) เสมอ -- ใช้กับช่องที่มีพฤติกรรม "ค้นหาขณะพิมพ์"
+    (search-as-you-type) เพราะ set_edit_text() ตั้งค่าผ่าน UI Automation
+    ValuePattern ตรงๆ ซึ่งบางแอปไม่ trigger event ค้นหา (เหมือนจำลอง
+    keyboard event ไม่ครบ) ทำให้ค่าโชว์ในช่องถูกต้อง แต่แอปไม่รู้ว่ามีการพิมพ์
+    เกิดขึ้นจริง เลยไม่ค้นหาอะไรให้เลย
+    """
     print(f"[DEBUG] กำลังค้นหาช่องกรอก: {criteria}")
 
     try:
@@ -190,18 +199,26 @@ def fill_edit(window, value, timeout=15, **criteria):
         print(f"        automation_id= {wrapper.element_info.automation_id!r}")
         print(f"        title (ก่อนกรอก) = {wrapper.window_text()!r}")
 
-        try:
-            wrapper.set_edit_text(str(value))
-
-        except Exception:
-            # แก้: ส่ง key ไปที่ wrapper โดยตรง ไม่ใช้ global send_keys
-            # เพื่อป้องกันพิมพ์ผิดหน้าต่างถ้า focus หลุด
+        if force_type_keys:
             wrapper.type_keys("^a{BACKSPACE}")
             wrapper.type_keys(
                 str(value),
                 with_spaces=True,
                 set_foreground=True,
             )
+        else:
+            try:
+                wrapper.set_edit_text(str(value))
+
+            except Exception:
+                # แก้: ส่ง key ไปที่ wrapper โดยตรง ไม่ใช้ global send_keys
+                # เพื่อป้องกันพิมพ์ผิดหน้าต่างถ้า focus หลุด
+                wrapper.type_keys("^a{BACKSPACE}")
+                wrapper.type_keys(
+                    str(value),
+                    with_spaces=True,
+                    set_foreground=True,
+                )
 
         # แก้: print ค่าจริงหลังกรอกเสร็จ (ของเดิม print ก่อนกรอก ทำให้ log
         # โชว์ค่าของรอบก่อนหน้า สับสนตอนดู debug log ย้อนหลัง)
@@ -286,11 +303,16 @@ def search_and_select_address(window, primary_search_term, timeout_per_try=12):
     for term in search_terms:
         print(f"[DEBUG] กำลังค้นหาที่อยู่ด้วยคำว่า {term!r}")
         try:
+            # แก้: force_type_keys=True เพราะช่องนี้เป็น search-as-you-type
+            # ถ้าใช้ set_edit_text() (ตั้งค่าตรงผ่าน UIA ไม่ใช่จำลอง
+            # keyboard event จริง) แอปจะไม่รู้ว่ามีการพิมพ์เกิดขึ้น เลยไม่
+            # trigger ค้นหาให้เลย ทั้งที่ค่าที่โชว์ในช่องถูกต้อง
             fill_edit(
                 window,
                 term,
                 title_re=r"^ที่อยู่$",
                 auto_id="LabelForTextBox",
+                force_type_keys=True,
             )
             time.sleep(2)
 
