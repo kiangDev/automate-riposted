@@ -33,7 +33,11 @@ HOME_AUTO_ID = "Shipping"
 HOME_CONTROL_TYPE = "ListItem"
 
 # ปุ่มเลือกกล่องสำเร็จรูป "ข" ที่หน้า MailPieceShape
-BOX_TYPE_AUTO_ID = "MailPieceShape_ModelId-303"
+# ยืนยันแล้วจาก controls dump จริง (dump.txt): tile "กล่องสำเร็จรูป ข" คือ
+# hotkey เลข 4 บนหน้าจอ ซึ่งตรงกับ auto_id="MailPieceShape_9"
+# (ค่าเดิม "MailPieceShape_ModelId-303" ไม่มีอยู่จริงในแอป เป็นค่าที่เดาไว้
+# แล้วไม่เคยตรวจสอบ)
+BOX_TYPE_AUTO_ID = "MailPieceShape_9"
 
 # ปุ่ม "ถัดไป"/"ยืนยัน" (ปุ่มหลักของแต่ละหน้า, hotkey ENTER) และ
 # ปุ่ม "ย้อนกลับ" (hotkey ESC) -- สังเกตจาก controls dump ว่าใช้ auto_id

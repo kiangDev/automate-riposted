@@ -1,0 +1,1817 @@
+>python dump_screen.py box_id.txt
+กำลังเชื่อมต่อโปรแกรม Riposte...
+[ทั้งหน้าต่าง] ลองครั้งที่ 1/3 ไม่สำเร็จ: (-2147220991, 'An event was unable to invoke any of the subscribers', (None, None, None, 0, None))
+[ทั้งหน้าต่าง] ลองครั้งที่ 2/3 ไม่สำเร็จ: (-2147220991, 'An event was unable to invoke any of the subscribers', (None, None, None, 0, None))
+[ทั้งหน้าต่าง] ลองครั้งที่ 3/3 ไม่สำเร็จ: (-2147220991, 'An event was unable to invoke any of the subscribers', (None, None, None, 0, None))
+[ทั้งหน้าต่าง] dump ไม่สำเร็จหลังจากลอง 3 ครั้ง: (-2147220991, 'An event was unable to invoke any of the subscribers', (None, None, None, 0, None))
+กำลังลอง dump เฉพาะส่วนเนื้อหาหลัก (ไม่รวม header ที่มีนาฬิกา)...
+[เฉพาะ Main pane] ลองครั้งที่ 1/3 ไม่สำเร็จ: {'auto_id': 'Menu.MainMenu', 'control_type': 'Custom', 'top_level_only': False, 'parent': <uia_element_info.UIAElementInfo - 'Riposte POS Application', Window, 66834>, 'backend': 'uia'}
+[เฉพาะ Main pane] ลองครั้งที่ 2/3 ไม่สำเร็จ: {'auto_id': 'Menu.MainMenu', 'control_type': 'Custom', 'top_level_only': False, 'parent': <uia_element_info.UIAElementInfo - 'Riposte POS Application', Window, 66834>, 'backend': 'uia'}
+[เฉพาะ Main pane] ลองครั้งที่ 3/3 ไม่สำเร็จ: {'auto_id': 'Menu.MainMenu', 'control_type': 'Custom', 'top_level_only': False, 'parent': <uia_element_info.UIAElementInfo - 'Riposte POS Application', Window, 66834>, 'backend': 'uia'}
+[เฉพาะ Main pane] dump ไม่สำเร็จหลังจากลอง 3 ครั้ง: {'auto_id': 'Menu.MainMenu', 'control_type': 'Custom', 'top_level_only': False, 'parent': <uia_element_info.UIAElementInfo - 'Riposte POS Application', Window, 66834>, 'backend': 'uia'}
+dump ไม่สำเร็จทั้งสองวิธี -- ลองปิดโปรแกรมอื่นที่แย่ง focus, หรือรอสักครู่แล้วลองใหม่อีกครั้ง
+
+C:\Users\WIN10\automate-riposted>Control Identifiers:
+
+C:\Users\WIN10\automate-riposted>
+C:\Users\WIN10\automate-riposted>Dialog - 'Riposte POS Application'    (L0, T0, R1920, B1080)
+'Dialog' is not recognized as an internal or external command,
+operable program or batch file.
+
+C:\Users\WIN10\automate-riposted>['Dialog', 'Riposte POS Application', 'Riposte POS ApplicationDialog']
+'['Dialog'' is not recognized as an internal or external command,
+operable program or batch file.
+
+C:\Users\WIN10\automate-riposted>child_window(title="Riposte POS Application", auto_id="ECPMainWindow", control_type="Window")
+'child_window' is not recognized as an internal or external command,
+operable program or batch file.
+
+C:\Users\WIN10\automate-riposted>   |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   | Custom - 'BreadcrumbsView'    (L70, T60, R1570, B125)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   | ['BreadcrumbsView', 'Custom', 'BreadcrumbsViewCustom', 'Custom0', 'Custom1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   | child_window(title="BreadcrumbsView", auto_id="BreadcrumbsView", control_type="Custom")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | ListBox - ''    (L539, T60, R1101, B115)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | ['ListBox', 'Escher RetailListBox', 'ListBox0', 'ListBox1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ListItem - 'EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModel'    (L540, T61, R680, B114)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ['EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModelListItem', 'EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModel', 'ListItem', 'EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModelListItem0', 'EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModelListItem1', 'EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModel0', 'EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModel1', 'ListItem0', 'ListItem1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | child_window(title="EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModel", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | Button - ''    (L540, T61, R680, B114)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | ['Escher RetailButton', 'Button', 'Escher RetailButton0', 'Escher RetailButton1', 'Button0', 'Button1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | Image - ''    (L0, T0, R0, B0)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['Image', 'Image0', 'Image1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(auto_id="Icon", control_type="Image")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ListItem - 'EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModel'    (L680, T61, R820, B114)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ['EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModelListItem2', 'EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModel2', 'ListItem2']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | child_window(title="EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModel", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | Button - ''    (L680, T61, R820, B114)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | ['Escher RetailButton2', 'Button2']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | Image - ''    (L0, T0, R0, B0)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['Image2']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(auto_id="Icon", control_type="Image")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ListItem - 'EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModel'    (L820, T61, R960, B114)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ['EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModelListItem3', 'EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModel3', 'ListItem3']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | child_window(title="EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModel", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | Button - ''    (L820, T61, R960, B114)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | ['Escher RetailButton3', 'Button3']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | Image - ''    (L0, T0, R0, B0)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['Image3']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(auto_id="Icon", control_type="Image")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ListItem - 'EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModel'    (L960, T61, R1100, B114)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ['EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModelListItem4', 'EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModel4', 'ListItem4']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | child_window(title="EscherGroup.EssentialCP.Client.UI.ViewModels.BreadcrumbStepViewModel", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | Button - ''    (L960, T61, R1100, B114)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | ['Escher RetailButton4', 'Button4']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | Image - ''    (L0, T0, R0, B0)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['Image4']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(auto_id="Icon", control_type="Image")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   | Custom - 'HeaderView'    (L0, T0, R1920, B60)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   | ['HeaderViewCustom', 'Custom2', 'HeaderView']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   | child_window(title="HeaderView", auto_id="HeaderView", control_type="Custom")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | Image - ''    (L4, T7, R64, B53)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | ['Image5']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | Static - 'Escher Retail'    (L72, T18, R183, B42)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | ['Escher RetailStatic', 'Escher Retail', 'Static', 'Static0', 'Static1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | child_window(title="Escher Retail", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | Button - '       ͹'    (L1447, T10, R1487, B50)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | ['Button5', '       ͹Button', '       ͹', '       ͹0', '       ͹1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | child_window(title="       ͹", auto_id="ShowNotificationsButton", control_type="Button")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | Image - ''    (L1471, T34, R1487, B50)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ['Image6']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | Static - '       ͹'    (L1487, T12, R1595, B48)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | ['       ͹Static', '       ͹2', 'Static2']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | child_window(title="       ͹", auto_id="NotificationsHeaderText", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | Button - 'BPI_01'    (L1603, T0, R1693, B60)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | ['BPI_01Button', 'Button6', 'BPI_01', 'BPI_010', 'BPI_011']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | child_window(title="BPI_01", auto_id="GlobalCommandMenu", control_type="Button")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | Static - 'BPI_01'    (L1603, T18, R1661, B42)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ['BPI_01Static', 'BPI_012', 'Static3']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | child_window(title="BPI_01", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | Image - ''    (L1669, T18, R1693, B42)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ['BPI_01Image', 'Image7']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | Static - '15/07/2026\r\n14:39'    (L1701, T5, R1795, B55)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | ['Static4', '15/07/2026\r\n14:39', '15/07/2026\r\n14:39Static']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | child_window(title="15/07/2026\r\n14:39", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | Button - ''    (L1797, T0, R1918, B60)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | ['Button7', '15/07/2026\r\n14:39Button']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | Static - '156.00'    (L1798, T10, R1872, B50)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ['156.00', 'Static5', '156.00Static', '156.000', '156.001', '156.00Static0', '156.00Static1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | child_window(title="156.00", auto_id="AmountTotalText", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | Button - '4'    (L1872, T10, R1917, B51)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ['4Button', 'Button8', '4', '40', '41']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | child_window(title="4", auto_id="CartButton", control_type="Button")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | Static - '4'    (L1887, T17, R1897, B37)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | ['4Static', '42', 'Static6', '4Static0', '4Static1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | child_window(title="4", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   | Custom - 'Main'    (L70, T125, R1570, B1080)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   | ['MainCustom', 'Main', 'Custom3']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   | child_window(title="Main", auto_id="EG.Shipping.MailPieceCategory", control_type="Custom")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | Custom - '  Ҵ  觢ͧ/  Ǵ    '    (L70, T125, R1570, B164)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | ['  Ҵ  觢ͧ/  Ǵ    Custom', 'Custom4', '  Ҵ  觢ͧ/  Ǵ    ', '  Ҵ  觢ͧ/  Ǵ    0', '  Ҵ  觢ͧ/  Ǵ    1', '  Ҵ  觢ͧ/  Ǵ    Custom0', '  Ҵ  觢ͧ/  Ǵ    Custom1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | child_window(title="  Ҵ  觢ͧ/  Ǵ    ", auto_id="Title", control_type="Custom")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | Static - '  Ҵ  觢ͧ/  Ǵ    '    (L85, T125, R1555, B164)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ['  Ҵ  觢ͧ/  Ǵ    Static', 'Static7', '  Ҵ  觢ͧ/  Ǵ    2']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | child_window(title="  Ҵ  觢ͧ/  Ǵ    ", auto_id="MainText", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ListBox - ''    (L0, T0, R0, B0)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ['ListBox2']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | child_window(auto_id="TextItems", control_type="List")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | Custom - '   ͡  Ǵ    '    (L0, T0, R0, B0)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | ['   ͡  Ǵ    Custom', '   ͡  Ǵ    ', 'Custom5']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | child_window(title="   ͡  Ǵ    ", auto_id="SubTitle", control_type="Custom")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | Pane - ''    (L70, T164, R1570, B1001)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | ['  Ҵ  觢ͧ/  Ǵ    Pane', 'Pane', 'Pane0', 'Pane1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | Custom - '  Ǵ    '    (L0, T0, R0, B0)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ['  Ǵ    ', 'Custom6', '  Ǵ    Custom']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | child_window(title="  Ǵ    ", auto_id="MailPieceCategorySelectionLabel_Text", control_type="Custom")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | Custom - ''    (L70, T164, R1554, B1052)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ['  Ҵ  觢ͧ/  Ǵ    Custom2', 'Custom7']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | child_window(auto_id="MailPieceCategorySelectionList_UserControlBase", control_type="Custom")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | GroupBox - ''    (L85, T164, R1539, B1052)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | ['  Ҵ  觢ͧ/  Ǵ    GroupBox', 'GroupBox']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | child_window(auto_id="MailPieceCategorySelectionList", control_type="Group")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '  ˹  ͧ'    (L85, T164, R353, B312)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['  ˹  ͧ', '  ˹  ͧListItem', 'ListItem5', '  ˹  ͧ0', '  ˹  ͧ1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="  ˹  ͧ", auto_id="MailPieceShape_1", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L85, T164, R353, B312)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['  Ҵ  觢ͧ/  Ǵ    Custom3', 'Custom8']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '  ˹  ͧ'    (L100, T179, R190, B203)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['  ˹  ͧ2', '  ˹  ͧStatic', 'Static8']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="  ˹  ͧ", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '1'    (L337, T175, R342, B187)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['1', '1Static', 'Static9']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="1", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '   ͧ      ٻ   '    (L353, T164, R621, B312)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['   ͧ      ٻ   ListItem', '   ͧ      ٻ   ', 'ListItem6', '   ͧ      ٻ   0', '   ͧ      ٻ   1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="   ͧ      ٻ   ", auto_id="MailPieceShape_7", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L353, T164, R621, B312)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['1Custom', 'Custom9']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '   ͧ      ٻ   '    (L368, T179, R517, B203)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['   ͧ      ٻ   2', '   ͧ      ٻ   Static', 'Static10']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="   ͧ      ٻ   ", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '2'    (L605, T175, R610, B187)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['2Static', '2', 'Static11']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="2", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '   ͧ      ٻ  '    (L621, T164, R889, B312)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['   ͧ      ٻ  ', '   ͧ      ٻ  ListItem', 'ListItem7', '   ͧ      ٻ  0', '   ͧ      ٻ  1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="   ͧ      ٻ  ", auto_id="MailPieceShape_8", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L621, T164, R889, B312)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['Custom10', '2Custom']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '   ͧ      ٻ  '    (L636, T179, R773, B203)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['   ͧ      ٻ  2', '   ͧ      ٻ  Static', 'Static12']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="   ͧ      ٻ  ", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '3'    (L873, T175, R878, B187)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['3Static', '3', 'Static13']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="3", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '   ͧ      ٻ  '    (L889, T164, R1157, B312)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['   ͧ      ٻ  ', '   ͧ      ٻ  ListItem', 'ListItem8', '   ͧ      ٻ  0', '   ͧ      ٻ  1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="   ͧ      ٻ  ", auto_id="MailPieceShape_9", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L889, T164, R1157, B312)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['3Custom', 'Custom11']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '   ͧ      ٻ  '    (L904, T179, R1043, B203)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['   ͧ      ٻ  Static', '   ͧ      ٻ  2', 'Static14']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="   ͧ      ٻ  ", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '4'    (L1141, T175, R1146, B187)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['4Static2', '43', 'Static15']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="4", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '   ͧ      ٻ  '    (L1157, T164, R1425, B312)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['   ͧ      ٻ  ListItem', '   ͧ      ٻ  ', 'ListItem9', '   ͧ      ٻ  0', '   ͧ      ٻ  1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="   ͧ      ٻ  ", auto_id="MailPieceShape_10", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L1157, T164, R1425, B312)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['4Custom', 'Custom12']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '   ͧ      ٻ  '    (L1172, T179, R1309, B203)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['   ͧ      ٻ  Static', '   ͧ      ٻ  2', 'Static16']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="   ͧ      ٻ  ", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '5'    (L1409, T175, R1414, B187)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['5', 'Static17', '5Static']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="5", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '   ͧ      ٻ  '    (L85, T312, R353, B460)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['   ͧ      ٻ  ListItem', 'ListItem10', '   ͧ      ٻ  ', '   ͧ      ٻ  0', '   ͧ      ٻ  1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="   ͧ      ٻ  ", auto_id="MailPieceShape_11", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L85, T312, R353, B460)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['   ͧ      ٻ  Custom', 'Custom13']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '   ͧ      ٻ  '    (L100, T327, R234, B351)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['Static18', '   ͧ      ٻ  Static', '   ͧ      ٻ  2']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="   ͧ      ٻ  ", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '6'    (L337, T323, R342, B335)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['Static19', '6', '6Static']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="6", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '   ͧ      ٻ  '    (L353, T312, R621, B460)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['   ͧ      ٻ  ', '   ͧ      ٻ  ListItem', 'ListItem11', '   ͧ      ٻ  0', '   ͧ      ٻ  1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="   ͧ      ٻ  ", auto_id="MailPieceShape_12", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L353, T312, R621, B460)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['6Custom', 'Custom14']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '   ͧ      ٻ  '    (L368, T327, R504, B351)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['   ͧ      ٻ  2', '   ͧ      ٻ  Static', 'Static20']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="   ͧ      ٻ  ", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '7'    (L605, T323, R610, B335)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['7', '7Static', 'Static21']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="7", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '   ͧ      ٻ  '    (L621, T312, R889, B460)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['   ͧ      ٻ  ListItem', '   ͧ      ٻ  ', 'ListItem12', '   ͧ      ٻ  0', '   ͧ      ٻ  1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="   ͧ      ٻ  ", auto_id="MailPieceShape_13", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L621, T312, R889, B460)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['7Custom', 'Custom15']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '   ͧ      ٻ  '    (L636, T327, R775, B351)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['   ͧ      ٻ  Static', '   ͧ      ٻ  2', 'Static22']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="   ͧ      ٻ  ", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '8'    (L873, T323, R878, B335)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['8', '8Static', 'Static23']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="8", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - ' ͧ      '    (L889, T312, R1157, B460)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | [' ͧ      ListItem', ' ͧ      ', 'ListItem13', ' ͧ      0', ' ͧ      1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title=" ͧ      ", auto_id="MailPieceShape_2", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L889, T312, R1157, B460)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['8Custom', 'Custom16']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - ' ͧ      '    (L904, T327, R1013, B351)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | [' ͧ      2', ' ͧ      Static', 'Static24']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title=" ͧ      ", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '9'    (L1141, T323, R1146, B335)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['9', '9Static', 'Static25']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="9", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - ' ͧ A4'    (L1157, T312, R1425, B460)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | [' ͧ A4', 'ListItem14', ' ͧ A4ListItem', ' ͧ A40', ' ͧ A41']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title=" ͧ A4", auto_id="MailPieceShape_3", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L1157, T312, R1425, B460)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['Custom17', '9Custom']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - ' ͧ A4'    (L1172, T327, R1238, B351)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | [' ͧ A42', 'Static26', ' ͧ A4Static']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title=" ͧ A4", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '10'    (L1403, T323, R1414, B335)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['10', '10Static', 'Static27']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="10", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - ' ͧ A3'    (L85, T460, R353, B608)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | [' ͧ A3ListItem', ' ͧ A3', 'ListItem15', ' ͧ A30', ' ͧ A31']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title=" ͧ A3", auto_id="MailPieceShape_5", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L85, T460, R353, B608)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['Custom18', ' ͧ A3Custom']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - ' ͧ A3'    (L100, T475, R165, B499)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | [' ͧ A32', ' ͧ A3Static', 'Static28']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title=" ͧ A3", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '11'    (L331, T471, R342, B483)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['11Static', 'Static29', '11']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="11", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '   ͧ       1'    (L353, T460, R621, B608)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['   ͧ       1ListItem', '   ͧ       1', 'ListItem16', '   ͧ       10', '   ͧ       11']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="   ͧ       1", auto_id="MailPieceShape_14", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L353, T460, R621, B608)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['11Custom', 'Custom19']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '   ͧ       1'    (L368, T475, R496, B499)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['   ͧ       12', '   ͧ       1Static', 'Static30']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="   ͧ       1", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '13'    (L599, T471, R610, B483)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['13', '13Static', 'Static31']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="13", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '   ͧ       2'    (L621, T460, R889, B608)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['   ͧ       2', '   ͧ       2ListItem', 'ListItem17', '   ͧ       20', '   ͧ       21']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="   ͧ       2", auto_id="MailPieceShape_15", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L621, T460, R889, B608)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['13Custom', 'Custom20']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '   ͧ       2'    (L636, T475, R767, B499)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['   ͧ       2Static', '   ͧ       22', 'Static32']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="   ͧ       2", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '14'    (L867, T471, R878, B483)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['14', 'Static33', '14Static']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="14", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '   ͧ       3'    (L889, T460, R1157, B608)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['   ͧ       3', '   ͧ       3ListItem', 'ListItem18', '   ͧ       30', '   ͧ       31']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="   ͧ       3", auto_id="MailPieceShape_16", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L889, T460, R1157, B608)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['Custom21', '14Custom']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '   ͧ       3'    (L904, T475, R1035, B499)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['   ͧ       32', '   ͧ       3Static', 'Static34']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="   ͧ       3", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '15'    (L1135, T471, R1146, B483)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['15Static', '15', 'Static35']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="15", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '   ͧ       4'    (L1157, T460, R1425, B608)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['   ͧ       4', '   ͧ       4ListItem', 'ListItem19', '   ͧ       40', '   ͧ       41']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="   ͧ       4", auto_id="MailPieceShape_17", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L1157, T460, R1425, B608)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['15Custom', 'Custom22']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '   ͧ       4'    (L1172, T475, R1303, B499)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['   ͧ       4Static', '   ͧ       42', 'Static36']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="   ͧ       4", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '16'    (L1403, T471, R1414, B483)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['16Static', '16', 'Static37']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="16", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '   ͧ       5'    (L85, T608, R353, B756)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['   ͧ       5ListItem', '   ͧ       5', 'ListItem20', '   ͧ       50', '   ͧ       51']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="   ͧ       5", auto_id="MailPieceShape_18", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L85, T608, R353, B756)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['   ͧ       5Custom', 'Custom23']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '   ͧ       5'    (L100, T623, R231, B647)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['   ͧ       52', 'Static38', '   ͧ       5Static']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="   ͧ       5", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '17'    (L331, T619, R342, B631)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['17', '17Static', 'Static39']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="17", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '   ͧ       6'    (L353, T608, R621, B756)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['   ͧ       6ListItem', '   ͧ       6', 'ListItem21', '   ͧ       60', '   ͧ       61']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="   ͧ       6", auto_id="MailPieceShape_19", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L353, T608, R621, B756)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['17Custom', 'Custom24']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '   ͧ       6'    (L368, T623, R499, B647)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['   ͧ       62', 'Static40', '   ͧ       6Static']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="   ͧ       6", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '18'    (L599, T619, R610, B631)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['18', '18Static', 'Static41']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="18", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '   ͧ      /      '    (L621, T608, R889, B756)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['   ͧ      /      ', '   ͧ      /      ListItem', 'ListItem22', '   ͧ      /      0', '   ͧ      /      1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="   ͧ      /      ", auto_id="MailPieceShape_21", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L621, T608, R889, B756)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['18Custom', 'Custom25']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '   ͧ      /      '    (L636, T623, R800, B647)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['   ͧ      /      2', '   ͧ      /      Static', 'Static42']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="   ͧ      /      ", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '19'    (L867, T619, R878, B631)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['19', '19Static', 'Static43']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="19", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - 'Roll Pallet / ULD'    (L889, T608, R1157, B756)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['Roll Pallet / ULDListItem', 'ListItem23', 'Roll Pallet / ULD', 'Roll Pallet / ULD0', 'Roll Pallet / ULD1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="Roll Pallet / ULD", auto_id="MailPieceShape_23", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L889, T608, R1157, B756)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['Custom26', '19Custom']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - 'Roll Pallet / ULD'    (L904, T623, R1051, B647)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['Static44', 'Roll Pallet / ULD2', 'Roll Pallet / ULDStatic']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="Roll Pallet / ULD", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '20'    (L1135, T619, R1146, B631)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['20', 'Static45', '20Static']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="20", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - 'EMS Jumbo Model'    (L1157, T608, R1425, B756)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['EMS Jumbo Model', 'ListItem24', 'EMS Jumbo ModelListItem', 'EMS Jumbo Model0', 'EMS Jumbo Model1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="EMS Jumbo Model", auto_id="MailPieceShape_24", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L1157, T608, R1425, B756)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['Custom27', '20Custom']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - 'EMS Jumbo Model'    (L1172, T623, R1342, B647)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['EMS Jumbo Model2', 'EMS Jumbo ModelStatic', 'Static46']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="EMS Jumbo Model", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '21'    (L1403, T619, R1414, B631)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['21Static', '21', 'Static47']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="21", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - 'EMS  Թ         ٻ'    (L85, T756, R353, B904)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['EMS  Թ         ٻListItem', 'EMS  Թ         ٻ', 'ListItem25', 'EMS  Թ         ٻ0', 'EMS  Թ         ٻ1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="EMS  Թ         ٻ", auto_id="MailPieceShape_22", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L85, T756, R353, B904)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['EMS  Թ         ٻCustom', 'Custom28']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - 'EMS  Թ         ٻ'    (L100, T771, R268, B795)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['EMS  Թ         ٻStatic', 'EMS  Թ         ٻ2', 'Static48']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="EMS  Թ         ٻ", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '22'    (L331, T767, R342, B779)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['22Static', '22', 'Static49']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="22", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - 'EMS   Ҵ     '    (L353, T756, R621, B904)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['EMS   Ҵ     ', 'EMS   Ҵ     ListItem', 'ListItem26', 'EMS   Ҵ     0', 'EMS   Ҵ     1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="EMS   Ҵ     ", auto_id="MailPieceShape_20", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L353, T756, R621, B904)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['22Custom', 'Custom29']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - 'EMS   Ҵ     '    (L368, T771, R513, B795)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['EMS   Ҵ     2', 'Static50', 'EMS   Ҵ     Static']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="EMS   Ҵ     ", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '23'    (L599, T767, R610, B779)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['23', '23Static', 'Static51']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="23", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '  ɳ ºѵ '    (L621, T756, R889, B904)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['  ɳ ºѵ ', '  ɳ ºѵ ListItem', 'ListItem27', '  ɳ ºѵ 0', '  ɳ ºѵ 1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="  ɳ ºѵ ", auto_id="MailPieceShape_26", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L621, T756, R889, B904)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['23Custom', 'Custom30']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '  ɳ ºѵ '    (L636, T771, R750, B795)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['  ɳ ºѵ 2', '  ɳ ºѵ Static', 'Static52']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="  ɳ ºѵ ", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '24'    (L867, T767, R878, B779)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['24', '24Static', 'Static53']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="24", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - ' ѵ  Ҿ'    (L889, T756, R1157, B904)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | [' ѵ  Ҿ', ' ѵ  ҾListItem', 'ListItem28', ' ѵ  Ҿ0', ' ѵ  Ҿ1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title=" ѵ  Ҿ", auto_id="MailPieceShape_27", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L889, T756, R1157, B904)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['Custom31', '24Custom']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - ' ѵ  Ҿ'    (L904, T771, R978, B795)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | [' ѵ  Ҿ2', ' ѵ  ҾStatic', 'Static54']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title=" ѵ  Ҿ", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '25'    (L1135, T767, R1146, B779)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['25', '25Static', 'Static55']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="25", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - 'EMS World (One Price) Box'    (L1157, T756, R1425, B904)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['EMS World (One Price) Box', 'ListItem29', 'EMS World (One Price) BoxListItem', 'EMS World (One Price) Box0', 'EMS World (One Price) Box1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="EMS World (One Price) Box", auto_id="MailPieceShape_25", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L1157, T756, R1425, B904)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['Custom32', '25Custom']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - 'EMS World (One Price) Box'    (L1172, T771, R1379, B819)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['EMS World (One Price) Box2', 'Static56', 'EMS World (One Price) BoxStatic']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="EMS World (One Price) Box", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '26'    (L1403, T767, R1414, B779)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['26', '26Static', 'Static57']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="26", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - ' ا MBag'    (L85, T904, R353, B1052)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | [' ا MBagListItem', 'ListItem30', ' ا MBag', ' ا MBag0', ' ا MBag1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title=" ا MBag", auto_id="MailPieceShape_30", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L85, T904, R353, B1052)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | [' ا MBagCustom', 'Custom33', ' ا MBagCustom0', ' ا MBagCustom1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - ' ا MBag'    (L100, T919, R180, B943)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | [' ا MBagStatic', 'Static58', ' ا MBag2', ' ا MBagStatic0', ' ا MBagStatic1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title=" ا MBag", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '27'    (L331, T915, R342, B927)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['27Static', 'Static59', '27']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="27", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - 'BRS'    (L353, T904, R621, B1052)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['BRS', 'ListItem31', 'BRSListItem', 'BRS0', 'BRS1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="BRS", auto_id="MailPieceShape_28", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L353, T904, R621, B1052)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['Custom34', '27Custom']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - 'BRS'    (L368, T919, R403, B943)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['BRSStatic', 'BRS2', 'Static60']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="BRS", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '28'    (L599, T915, R610, B927)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['Static61', '28', '28Static']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="28", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ListItem - '㹸 áԨ    '    (L621, T904, R889, B1052)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | ['㹸 áԨ    ListItem', '㹸 áԨ    ', 'ListItem32', '㹸 áԨ    0', '㹸 áԨ    1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    | child_window(title="㹸 áԨ    ", auto_id="MailPieceShape_32", control_type="ListItem")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | Custom - ''    (L621, T904, R889, B1052)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    | ['28Custom', 'Custom35']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '㹸 áԨ    '    (L636, T919, R757, B943)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['㹸 áԨ    Static', '㹸 áԨ    2', 'Static62']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="㹸 áԨ    ", auto_id="CaptionTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | Static - '31'    (L867, T915, R878, B927)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | ['31Static', '31', 'Static63']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |    |    |    | child_window(title="31", auto_id="HotkeyTextBlock", control_type="Text")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | Custom - ''    (L0, T0, R0, B0)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | ['Custom36']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | child_window(auto_id="FooterGrid", control_type="Custom")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ScrollBar - ''    (L1554, T164, R1570, B1001)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | ['  Ҵ  觢ͧ/  Ǵ    ScrollBar', 'ScrollBar']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | child_window(auto_id="PART_VerticalScrollBar", control_type="ScrollBar")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | Button - 'M 0 8 L 8 8 L 4 0 Z'    (L1554, T164, R1570, B180)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | ['Button9', 'M 0 8 L 8 8 L 4 0 Z', 'M 0 8 L 8 8 L 4 0 ZButton']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | child_window(title="M 0 8 L 8 8 L 4 0 Z", auto_id="LineUp", control_type="Button")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | Button - ''    (L0, T0, R0, B0)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | ['Button10']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | child_window(auto_id="PageUp", control_type="Button")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | Thumb - ''    (L1557, T181, R1567, B938)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | ['Thumb', '  Ҵ  觢ͧ/  Ǵ    Thumb']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | Button - ''    (L1554, T939, R1570, B985)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | ['26Button', 'Button11']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | child_window(auto_id="PageDown", control_type="Button")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | Button - 'M 0 0 L 4 8 L 8 0 Z'    (L1554, T985, R1570, B1001)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | ['M 0 0 L 4 8 L 8 0 ZButton', 'Button12', 'M 0 0 L 4 8 L 8 0 Z']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | child_window(title="M 0 0 L 4 8 L 8 0 Z", auto_id="LineDown", control_type="Button")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | Custom - ''    (L70, T1011, R1570, B1080)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | [' ا MBagCustom2', 'Custom37']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    | child_window(auto_id="ctlMain", control_type="Custom")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | Custom - ''    (L70, T1011, R214, B1080)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | [' ا MBagCustom3', 'Custom38']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    | child_window(auto_id="LocalCommand_Previous_UserControlBase", control_type="Custom")
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | Button - '  Ѻ'    (L76, T1016, R208, B1074)
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    | ['Button13', '  Ѻ', '  ѺButton', '  Ѻ0', '  Ѻ1']
+| was unexpected at this time.
+
+C:\Users\WIN10\automate-riposted>   |    |    |    |

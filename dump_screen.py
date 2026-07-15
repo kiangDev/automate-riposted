@@ -64,12 +64,16 @@ def main():
         return
 
     # ถ้าไม่สำเร็จ (มักเพราะนาฬิกา/badge ใน header กำลังอัปเดต)
-    # ให้ลอง dump เฉพาะส่วนเนื้อหาหลัก (auto_id="Menu.MainMenu") แทน
+    # ให้ลอง dump เฉพาะส่วนเนื้อหาหลัก แทน
     # ซึ่งเป็นส่วนที่มีปุ่ม/ช่องกรอกทั้งหมดที่เราต้องการจริงๆ
+    # หมายเหตุ: auto_id="Menu.MainMenu" ไม่มีอยู่จริง (ตรวจสอบจาก controls
+    # dump แล้วว่า pane เนื้อหาหลักของทุกหน้าใช้ title="Main" คงที่ ส่วน
+    # auto_id จะเปลี่ยนไปตามหน้า เช่น "EG.Shipping.MailPieceCategory")
+    # เลยเปลี่ยนมาค้นด้วย title="Main" แทน
     print("กำลังลอง dump เฉพาะส่วนเนื้อหาหลัก (ไม่รวม header ที่มีนาฬิกา)...")
     try:
         main_pane = main_window.child_window(
-            auto_id="Menu.MainMenu", control_type="Custom"
+            title="Main", control_type="Custom"
         )
         fallback_filename = f"main_only_{output_filename}"
         if try_dump(main_pane, fallback_filename, "เฉพาะ Main pane"):
