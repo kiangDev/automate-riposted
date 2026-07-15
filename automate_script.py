@@ -186,9 +186,9 @@ def fill_edit(window, value, timeout=15, **criteria):
         wrapper.click_input()
 
         print("[DEBUG] พบช่องกรอก")
-        print(f"        title        = {wrapper.window_text()!r}")
         print(f"        control_type = {wrapper.element_info.control_type!r}")
         print(f"        automation_id= {wrapper.element_info.automation_id!r}")
+        print(f"        title (ก่อนกรอก) = {wrapper.window_text()!r}")
 
         try:
             wrapper.set_edit_text(str(value))
@@ -202,6 +202,10 @@ def fill_edit(window, value, timeout=15, **criteria):
                 with_spaces=True,
                 set_foreground=True,
             )
+
+        # แก้: print ค่าจริงหลังกรอกเสร็จ (ของเดิม print ก่อนกรอก ทำให้ log
+        # โชว์ค่าของรอบก่อนหน้า สับสนตอนดู debug log ย้อนหลัง)
+        print(f"        title (หลังกรอก)  = {wrapper.window_text()!r}")
 
         return wrapper
 
@@ -267,7 +271,7 @@ def report_validation_errors(window, timeout=1):
         pass
 
 
-def search_and_select_address(window, primary_search_term, timeout_per_try=6):
+def search_and_select_address(window, primary_search_term, timeout_per_try=12):
     """
     ค้นหาที่อยู่แล้วเลือกผลลัพธ์แรก -- ลอง primary_search_term (จาก CSV หรือ
     DEFAULT_ADDRESS_SEARCH) ก่อน ถ้าค้นแล้วไม่มีผลลัพธ์เลย (เช่นรหัสไปรษณีย์
