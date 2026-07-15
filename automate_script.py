@@ -48,6 +48,13 @@ SUBMIT_AUTO_ID = "LocalCommand_Submit"
 PREVIOUS_AUTO_ID = "LocalCommand_Previous"
 HOME_BUTTON_AUTO_ID = "LocalCommand_Home"
 
+# หน้าคำถาม "สินค้าอันตราย" (EG.Shipping.DangerousGoodsQuestion) ที่แทรกมา
+# หลังเลือกกล่องเสร็จ ยืนยันจาก controls dump แล้วว่ามีปุ่มตอบ 2 ปุ่ม:
+# auto_id="Declined" กับ auto_id="Confirmed"
+# ความหมายจริง (ยืนยันกับผู้ใช้แล้ว): "Confirmed" = ยืนยันว่า "ไม่มี"
+# สินค้าอันตราย ใช้ปุ่มนี้เป็นค่า default สำหรับพัสดุทั่วไป
+DANGEROUS_GOODS_ANSWER_AUTO_ID = "Confirmed"
+
 
 def load_processed_data(log_filename=LOG_FILENAME):
     """อ่านรายการที่ทำสำเร็จแล้วจากไฟล์ log"""
@@ -152,6 +159,21 @@ def fill_edit(window, value, timeout=15, **criteria):
         print(f"[ERROR] ค่าที่ต้องการกรอก: {value!r}")
         print(f"[ERROR] {type(error).__name__}: {error}")
         raise
+
+
+def handle_dangerous_goods_question(window, timeout=5):
+    """
+    หน้าคำถามสินค้าอันตราย (EG.Shipping.DangerousGoodsQuestion) จะแทรกโผล่มา
+    หลังเลือกกล่องเสร็จ ไม่ได้โผล่ทุกครั้งแน่นอน (ยังไม่ยืนยัน) เลยเช็คก่อนว่า
+    เจอปุ่ม "Confirmed" ไหม ถ้าไม่เจอภายใน timeout สั้นๆ ก็ข้ามไปเงียบๆ ไม่ throw
+    """
+    if is_control_visible(
+        window, timeout=timeout, auto_id=DANGEROUS_GOODS_ANSWER_AUTO_ID, control_type="Button"
+    ):
+        print("[DEBUG] พบหน้าคำถามสินค้าอันตราย -> กด 'Confirmed' (ยืนยันว่าไม่มีสินค้าอันตราย)")
+        wait_and_click(window, auto_id=DANGEROUS_GOODS_ANSWER_AUTO_ID, control_type="Button")
+        time.sleep(1)
+        click_next(window)
 
 
 def click_next(window):
@@ -374,6 +396,9 @@ def main():
                         time.sleep(1)
 
                         click_next(main_window)  # ถัดไป (หลังเลือกกล่อง)
+
+                        # แก้: หน้าคำถามสินค้าอันตรายแทรกมาตรงนี้ (ถ้ามี)
+                        handle_dangerous_goods_question(main_window)
 
                         click_next(main_window)  # ยืนยัน (ปุ่มเดียวกัน auto_id)
                         time.sleep(1)
