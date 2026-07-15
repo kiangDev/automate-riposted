@@ -76,11 +76,11 @@ def dump_controls_on_failure(window, tag):
         print(f"[WARNING] dump control tree ไม่สำเร็จ: {dump_error}")
 
 
-def wait_and_click(window, timeout=15, **criteria):
+def wait_and_click(window, timeout=15, wait_states="exists visible enabled", **criteria):
     print(f"[DEBUG] กำลังค้นหา control: {criteria}")
     try:
         control = window.child_window(**criteria)
-        control.wait("exists visible enabled", timeout=timeout)
+        control.wait(wait_states, timeout=timeout)
         wrapper = control.wrapper_object()
 
         print("[DEBUG] พบ control")
@@ -94,7 +94,7 @@ def wait_and_click(window, timeout=15, **criteria):
     except Exception as error:
         print(f"[ERROR] หา/คลิก control ไม่สำเร็จ: {criteria}")
         print(f"[ERROR] {type(error).__name__}: {error}")
-        tag = criteria.get("title_re") or criteria.get("title") or "unknown"
+        tag = criteria.get("title_re") or criteria.get("title") or criteria.get("auto_id") or "unknown"
         safe_tag = "".join(ch for ch in str(tag) if ch.isalnum())[:30] or "unknown"
         dump_controls_on_failure(window, safe_tag)
         raise
@@ -302,11 +302,14 @@ def main():
                         main_window.wait("exists visible enabled", timeout=15)
                         main_window.set_focus()
 
-                        # หน้าเริ่มต้น (แก้: ใช้ auto_id แทน title ภาษาไทยที่เพี้ยน)
+                        # หน้าเริ่มต้น (แก้: ใช้ auto_id แทน title ภาษาไทยที่เพี้ยน
+                        # และผ่อนเงื่อนไขเป็น exists+visible เพราะ ListItem
+                        # ในแอปนี้ไม่รายงานสถานะ enabled ผ่าน UI Automation)
                         wait_and_click(
                             main_window,
                             auto_id=HOME_AUTO_ID,
                             control_type=HOME_CONTROL_TYPE,
+                            wait_states="exists visible",
                         )
                         time.sleep(1)
 
