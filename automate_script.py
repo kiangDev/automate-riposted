@@ -241,6 +241,25 @@ def click_next(window):
     time.sleep(1)
 
 
+def report_validation_errors(window, timeout=1):
+    """
+    บางหน้า (เช่น ข้อมูลผู้รับ) มี ListBox auto_id="ValidationErrors" ที่โชว์
+    ข้อความ error ถ้ากรอกข้อมูลไม่ครบ/ไม่ผ่าน validation -- เช็คแบบเบาๆ
+    (timeout สั้น) หลังกด submit เผื่อมี จะได้ print ออกมาให้เห็นเลยว่าขาด
+    ช่องไหน แทนที่จะต้องเดา/ขอ dump ใหม่ทุกครั้ง ไม่เจอก็ผ่านไปเงียบๆ
+    """
+    try:
+        error_list = window.child_window(auto_id="ValidationErrors", control_type="List")
+        error_list.wait("exists visible", timeout=timeout)
+        wrapper = error_list.wrapper_object()
+        items = wrapper.descendants()
+        messages = [item.window_text() for item in items if item.window_text().strip()]
+        if messages:
+            print(f"[WARNING] พบ validation error บนหน้านี้: {messages}")
+    except Exception:
+        pass
+
+
 def validate_csv_headers(fieldnames):
     """ตรวจสอบว่า CSV มี Header ที่จำเป็นครบหรือไม่"""
     required_headers = {"PostalCode", "FirstName", "LastName"}
@@ -530,6 +549,14 @@ def main():
                             title_re=r".*หมายเลขโทรศัพท์.*",
                             auto_id="LabelForTextBox",
                         )
+
+                        # แก้: หน้า "ข้อมูลผู้รับ" (EG.CustomerCapture.
+                        # CustomerCaptureView) ต้องกด "ถัดไป" ยืนยันฟอร์มนี้
+                        # ก่อน ถึงจะไปหน้า dialog "ไม่" ต่อได้ -- เดิมขาด
+                        # ขั้นตอนนี้ไปเลยกดหา "ไม่" ไม่เจอ (ยืนยันจาก controls
+                        # dump จริงแล้วว่าหน้านี้มีปุ่ม LocalCommand_Submit)
+                        click_next(main_window)
+                        report_validation_errors(main_window)
 
                         # สิ้นสุดกระบวนการ
                         wait_and_click(main_window, title_re=r"^ไม่$")
