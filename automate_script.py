@@ -55,6 +55,14 @@ HOME_BUTTON_AUTO_ID = "LocalCommand_Home"
 # สินค้าอันตราย ใช้ปุ่มนี้เป็นค่า default สำหรับพัสดุทั่วไป
 DANGEROUS_GOODS_ANSWER_AUTO_ID = "Confirmed"
 
+# หน้าเลือกบริการ (EG.Shipping.Services) มีบริการ ~39 ตัวเรียงเลื่อนซ้าย-ขวา
+# แต่ละตัวเป็นปุ่ม auto_id="ShippingService_<รหัส>" ไม่มีข้อความ/hotkey กำกับ
+# เลยดูจาก dump ไม่ออกว่าตัวไหนคือบริการที่ต้องการ -- ผู้ใช้ยืนยันแล้วว่า
+# "ShippingService_2572" (ตัวแรกสุด ซึ่งตอน dump ก็เห็นรายละเอียดราคา/
+# ค่าธรรมเนียมโชว์อยู่แล้ว น่าจะถูกเลือกเป็น default อยู่ก่อนแล้วด้วย)
+# คือตัวที่ต้องการใช้จริง
+SHIPPING_SERVICE_AUTO_ID = "ShippingService_2572"
+
 
 def load_processed_data(log_filename=LOG_FILENAME):
     """อ่านรายการที่ทำสำเร็จแล้วจากไฟล์ log"""
@@ -463,16 +471,15 @@ def main():
                         click_next(main_window)
                         time.sleep(2)
 
-                        # เลือกบริการ (เดิมเดา found_index=0 ไม่แม่นยำ/กดไม่ติด
-                        # -- ผู้ใช้เช็คจากหน้าจอจริงแล้วว่าตัวเลือกที่ต้องกด
-                        # มี hotkey เป็นเลข "0" กำกับอยู่ เหมือนหน้าเลือกกล่อง
-                        # (MailPieceShape) ที่แต่ละตัวเลือกมี HotkeyTextBlock
-                        # เป็นเลขกำกับให้กดตรงๆ ได้ -- ยังไม่มี controls dump
-                        # ของหน้านี้มายืนยัน auto_id เลยใช้วิธีส่ง hotkey ตรงๆ
-                        # แทน ถ้าเจอปัญหากดไม่ติดอีก ให้ dump หน้านี้มาดู)
-                        print("[DEBUG] กำลังเลือกบริการด้วย hotkey '0'")
-                        main_window.set_focus()
-                        main_window.type_keys("0")
+                        # เลือกบริการ -- ยืนยันจาก controls dump จริงแล้วว่า
+                        # ปุ่มที่ต้องกดคือ auto_id="ShippingService_2572"
+                        # (เลิกใช้ found_index=0 guess และ hotkey "0" แบบเดิม)
+                        wait_and_click(
+                            main_window,
+                            auto_id=SHIPPING_SERVICE_AUTO_ID,
+                            control_type="Button",
+                            wait_states="exists visible",
+                        )
                         time.sleep(1)
 
                         for round_number in range(1, 4):
