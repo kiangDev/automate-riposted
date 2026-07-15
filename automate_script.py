@@ -32,6 +32,18 @@ SUCCESS_WAIT_TIMEOUT = 10
 HOME_AUTO_ID = "Shipping"
 HOME_CONTROL_TYPE = "ListItem"
 
+# ปุ่มเลือกกล่องสำเร็จรูป "ข" ที่หน้า MailPieceShape
+BOX_TYPE_AUTO_ID = "MailPieceShape_ModelId-303"
+
+# ปุ่ม "ถัดไป"/"ยืนยัน" (ปุ่มหลักของแต่ละหน้า, hotkey ENTER) และ
+# ปุ่ม "ย้อนกลับ" (hotkey ESC) -- สังเกตจาก controls dump ว่าใช้ auto_id
+# เดียวกันซ้ำทุกหน้าจอ (LocalCommand_*) ต่างกันแค่ label ข้อความ
+# หมายเหตุ: ยังไม่ได้ยืนยัน 100% ว่าทุกหน้าใช้ auto_id นี้เหมือนกันหมด
+# ถ้าเจอหน้าไหนกดไม่ติด ให้ตรวจสอบ auto_id จริงของหน้านั้นอีกที
+SUBMIT_AUTO_ID = "LocalCommand_Submit"
+PREVIOUS_AUTO_ID = "LocalCommand_Previous"
+HOME_BUTTON_AUTO_ID = "LocalCommand_Home"
+
 
 def load_processed_data(log_filename=LOG_FILENAME):
     """อ่านรายการที่ทำสำเร็จแล้วจากไฟล์ log"""
@@ -139,8 +151,23 @@ def fill_edit(window, value, timeout=15, **criteria):
 
 
 def click_next(window):
-    """กดปุ่มถัดไป"""
-    wait_and_click(window, title_re=r"^ถัดไป$")
+    """
+    กดปุ่มถัดไป/ยืนยัน (ปุ่มหลักของหน้า)
+    ลองใช้ auto_id="LocalCommand_Submit" ก่อน (เชื่อถือได้กว่า title ภาษาไทย
+    ที่เพี้ยนจาก UI Automation) ถ้าไม่เจอค่อย fallback ไปหา title "ถัดไป"
+    """
+    try:
+        wait_and_click(
+            window,
+            auto_id=SUBMIT_AUTO_ID,
+            control_type="Button",
+            wait_states="exists visible",
+            timeout=5,
+        )
+    except Exception:
+        print("[DEBUG] ไม่พบปุ่มด้วย auto_id, ลอง fallback เป็น title_re='ถัดไป'")
+        wait_and_click(window, title_re=r"^ถัดไป$")
+
     time.sleep(1)
 
 
@@ -193,8 +220,8 @@ def wait_for_success(window, timeout=SUCCESS_WAIT_TIMEOUT):
 
 def recover_ui(main_window, max_attempts=5):
     """
-    พยายามปิด popup ด้วย ESC แล้ว 'ยืนยัน' ว่ากลับมาหน้าแรกจริง
-    ก่อนปล่อยให้ลูปไปทำรายการถัดไป ป้องกัน error ไล่กันเป็นทอดๆ
+    พยายามกลับสู่หน้าแรก โดยลองกดปุ่ม "หน้าหลัก" (LocalCommand_Home) ก่อน
+    เพราะน่าเชื่อถือกว่าการกด ESC วนหลายรอบ ถ้าไม่สำเร็จค่อย fallback เป็น ESC
     """
     print("[DEBUG] กำลังพยายามกู้คืนหน้าจอ")
 
@@ -203,6 +230,27 @@ def recover_ui(main_window, max_attempts=5):
     except Exception:
         pass
 
+    # วิธีที่ 1: กดปุ่ม "หน้าหลัก" โดยตรง
+    try:
+        home_button = main_window.child_window(
+            auto_id=HOME_BUTTON_AUTO_ID, control_type="Button"
+        )
+        home_button.wait("exists visible", timeout=3)
+        home_button.wrapper_object().click_input()
+        time.sleep(1)
+
+        if is_control_visible(
+            main_window,
+            timeout=3,
+            auto_id=HOME_AUTO_ID,
+            control_type=HOME_CONTROL_TYPE,
+        ):
+            print("[DEBUG] กลับมาหน้าแรกสำเร็จ (ผ่านปุ่มหน้าหลัก)")
+            return True
+    except Exception as error:
+        print(f"[DEBUG] กดปุ่มหน้าหลักไม่สำเร็จ: {error}")
+
+    # วิธีที่ 2: fallback เป็นการกด ESC วนหลายรอบ
     for attempt in range(1, max_attempts + 1):
         send_keys("{ESC}")
         time.sleep(0.7)
@@ -213,11 +261,11 @@ def recover_ui(main_window, max_attempts=5):
             auto_id=HOME_AUTO_ID,
             control_type=HOME_CONTROL_TYPE,
         ):
-            print(f"[DEBUG] กลับมาหน้าแรกสำเร็จ (ครั้งที่ {attempt})")
+            print(f"[DEBUG] กลับมาหน้าแรกสำเร็จ (ESC ครั้งที่ {attempt})")
             return True
 
     print(
-        "[ERROR] กู้คืนหน้าจอไม่สำเร็จ ไม่พบหน้าแรกหลังกด ESC "
+        "[ERROR] กู้คืนหน้าจอไม่สำเร็จ ไม่พบหน้าแรกหลังลองทั้งปุ่มหน้าหลักและ ESC "
         f"{max_attempts} ครั้ง -- ควรหยุดสคริปต์และตรวจสอบหน้าจอด้วยตนเอง"
     )
     return False
@@ -313,12 +361,17 @@ def main():
                         )
                         time.sleep(1)
 
-                        wait_and_click(main_window, title_re=r".*กล่องสำเร็จรูป ข.*")
+                        wait_and_click(
+                            main_window,
+                            auto_id=BOX_TYPE_AUTO_ID,
+                            control_type="ListItem",
+                            wait_states="exists visible",
+                        )
                         time.sleep(1)
 
-                        click_next(main_window)
+                        click_next(main_window)  # ถัดไป (หลังเลือกกล่อง)
 
-                        wait_and_click(main_window, title_re=r"^ยืนยัน$")
+                        click_next(main_window)  # ยืนยัน (ปุ่มเดียวกัน auto_id)
                         time.sleep(1)
 
                         # น้ำหนัก
