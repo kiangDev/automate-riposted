@@ -16,9 +16,9 @@
    ส่งไฟล์ทั้งหมดมาดูได้เลย (โดยเฉพาะไฟล์ที่ชื่อไม่คุ้น ไม่ใช่ "Riposte")
 """
 
-import re
 import time
 from pywinauto import Desktop
+from pywinauto.application import Application
 
 
 def safe_filename(text, fallback):
@@ -50,7 +50,13 @@ def main():
 
         filename = f"window_{index}_{safe_filename(title, 'untitled')}.txt"
         try:
-            window.print_control_identifiers(filename=filename)
+            # แก้: Desktop().windows() คืน UIAWrapper ดิบๆ ซึ่งบางเวอร์ชัน
+            # ของ pywinauto ไม่มีเมธอด print_control_identifiers ตรงๆ
+            # ต้องต่อผ่าน Application().connect(handle=...) แล้วขอ
+            # WindowSpecification ใหม่จาก handle เดียวกันก่อน ถึงจะ dump ได้
+            app = Application(backend="uia").connect(handle=window.handle)
+            win_spec = app.window(handle=window.handle)
+            win_spec.print_control_identifiers(filename=filename)
             print(f"    -> บันทึกลง {filename} แล้ว")
         except Exception as error:
             print(f"    -> dump ไม่สำเร็จ: {error}")

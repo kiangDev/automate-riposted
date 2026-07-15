@@ -519,6 +519,23 @@ def main():
                             auto_id="LabelForTextBox",
                         )
                         time.sleep(2)
+
+                        # DEBUG ชั่วคราว: dump ตอน dropdown ที่อยู่ควรเปิดอยู่
+                        # พอดี ทำจากในสคริปต์เลย (ไม่ใช่สลับไปรันไฟล์แยกที่
+                        # เทอร์มินัล) เพราะสลับหน้าต่างจะทำให้ dropdown ปิดไป
+                        # ก่อน dump ทัน -- ลบ block นี้ทิ้งได้หลังจากได้ auto_id
+                        # ของรายการ dropdown จริงมาแล้ว
+                        try:
+                            main_window.print_control_identifiers(
+                                filename="address_dropdown_debug.txt"
+                            )
+                            print(
+                                "[DEBUG] บันทึก controls ตอน dropdown ที่อยู่เปิดอยู่ "
+                                "ลง address_dropdown_debug.txt แล้ว"
+                            )
+                        except Exception as dump_error:
+                            print(f"[WARNING] dump dropdown ไม่สำเร็จ: {dump_error}")
+
                         # แก้: เลือกที่อยู่ตัวแรกในรายการ dropdown ที่ขึ้นมาหลัง
                         # พิมพ์ค้นหา -- เดิมใช้ send_keys global ซึ่งเสี่ยงพิมพ์
                         # ผิดหน้าต่างถ้า focus หลุด (ปัญหาเดียวกับที่แก้ไปแล้ว
