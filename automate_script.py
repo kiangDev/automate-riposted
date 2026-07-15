@@ -520,29 +520,25 @@ def main():
                         )
                         time.sleep(2)
 
-                        # DEBUG ชั่วคราว: dump ตอน dropdown ที่อยู่ควรเปิดอยู่
-                        # พอดี ทำจากในสคริปต์เลย (ไม่ใช่สลับไปรันไฟล์แยกที่
-                        # เทอร์มินัล) เพราะสลับหน้าต่างจะทำให้ dropdown ปิดไป
-                        # ก่อน dump ทัน -- ลบ block นี้ทิ้งได้หลังจากได้ auto_id
-                        # ของรายการ dropdown จริงมาแล้ว
-                        try:
-                            main_window.print_control_identifiers(
-                                filename="address_dropdown_debug.txt"
-                            )
-                            print(
-                                "[DEBUG] บันทึก controls ตอน dropdown ที่อยู่เปิดอยู่ "
-                                "ลง address_dropdown_debug.txt แล้ว"
-                            )
-                        except Exception as dump_error:
-                            print(f"[WARNING] dump dropdown ไม่สำเร็จ: {dump_error}")
+                        # แก้: ยืนยันจาก controls dump จริงแล้วว่าผลค้นหาที่อยู่
+                        # เป็นหน้าแยกต่างหาก (EG.CustomerCapture.
+                        # AddressSearchResultsView) ไม่ใช่ dropdown ลอยเหนือ
+                        # ช่องกรอก -- แต่ละผลลัพธ์เป็น ListItem ที่ auto_id
+                        # ถูกตั้งเป็นข้อความที่อยู่เพี้ยนภาษาไทยเอง (ไม่ใช่ ID
+                        # คงที่) เลยแมตช์ด้วย title/auto_id ไม่ได้ แต่ทุกผลลัพธ์
+                        # อยู่ใน Group เดียวกัน (auto_id="AddressResult") เลย
+                        # เลือกตัวแรกในกลุ่มนี้ด้วย found_index=0 แทน (เชื่อถือ
+                        # ได้กว่าเพราะ scope แคบแค่ในกลุ่มผลลัพธ์ที่อยู่เท่านั้น)
+                        address_result_group = main_window.child_window(
+                            auto_id="AddressResult", control_type="Group"
+                        )
+                        address_result_group.wait("exists visible", timeout=10)
 
-                        # แก้: เลือกที่อยู่ตัวแรกในรายการ dropdown ที่ขึ้นมาหลัง
-                        # พิมพ์ค้นหา -- เดิมใช้ send_keys global ซึ่งเสี่ยงพิมพ์
-                        # ผิดหน้าต่างถ้า focus หลุด (ปัญหาเดียวกับที่แก้ไปแล้ว
-                        # ใน fill_edit) เปลี่ยนมาส่ง key ไปที่ wrapper ของช่อง
-                        # กรอกที่อยู่โดยตรงแทน
-                        address_edit_wrapper.type_keys("{DOWN}")
-                        address_edit_wrapper.type_keys("{ENTER}")
+                        first_address_result = address_result_group.child_window(
+                            control_type="ListItem", found_index=0
+                        )
+                        first_address_result.wait("exists visible", timeout=10)
+                        first_address_result.wrapper_object().click_input()
                         time.sleep(1)
 
                         click_next(main_window)
