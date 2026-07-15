@@ -1,5 +1,7 @@
 import csv
 import os
+import re
+import subprocess
 import time
 import traceback
 
@@ -12,6 +14,14 @@ from pywinauto.timings import TimeoutError as PywinautoTimeoutError
 CSV_FILENAME = "data.csv"
 LOG_FILENAME = "success_log.txt"
 CONTROLS_FILENAME = "controls.txt"
+# แก้: ไฟล์ output แยกต่างหาก (ไม่แก้ data.csv ต้นฉบับ) มีคอลัมน์ TrackingNo
+# เติมเลขพัสดุที่จับได้กลับเข้าไปทุกครั้งที่ทำรายการสำเร็จ เปิดด้วย Excel ได้
+OUTPUT_CSV_FILENAME = "data_with_tracking.csv"
+
+# แก้: push ไฟล์ output กลับขึ้น git repo เดิม (ที่เครื่องนี้ต่อ GitHub อยู่
+# แล้ว) เป็นระยะ เพื่อให้ดึงไฟล์จากเครื่องอื่นได้ผ่าน git pull โดยไม่ต้อง
+# setup อะไรเพิ่ม -- throttle ไม่ให้ push ถี่เกินไป (หน่วยเป็นวินาที)
+GIT_SYNC_INTERVAL_SECONDS = 300
 
 # ค่า default ใช้เมื่อ CSV ไม่มีคอลัมน์ หรือช่องนั้นว่าง
 DEFAULT_PHONE_NUMBER = "0987654321"
@@ -32,6 +42,11 @@ ADDRESS_SEARCH_FALLBACK_CANDIDATES = ["11", "12", "88", "1", "2", "10"]
 # ---------------------------------------------------------------
 SUCCESS_TITLE_RE = r".*(สำเร็จ|เสร็จสิ้น|พิมพ์เสร็จ).*"
 SUCCESS_WAIT_TIMEOUT = 10
+
+# เลขพัสดุ (tracking number) ของไปรษณีย์ไทย รูปแบบมาตรฐาน: ตัวอักษร 2 ตัว +
+# ตัวเลข 9 หลัก + ตัวอักษร 2 ตัว (เช่น JH000205755TH) แมตช์ด้วย pattern นี้
+# แทนการหา label ภาษาไทย (มักเพี้ยนผ่าน UI Automation เหมือนจุดอื่นๆ)
+TRACKING_NUMBER_RE = re.compile(r"^[A-Z]{2}\d{9}[A-Z]{2}$")
 
 # ปุ่ม/เมนู "จุดเริ่มต้น" (รับฝากสิ่งของ) ที่ใช้ยืนยันว่ากลับมาหน้าแรกได้จริง
 # หมายเหตุ: แอป Riposte ส่งค่า title ภาษาไทยออกมาทาง UI Automation แบบเพี้ยน
@@ -80,9 +95,15 @@ def load_processed_data(log_filename=LOG_FILENAME):
 
     with open(log_filename, "r", encoding="utf-8-sig") as file:
         for line in file:
-            identifier = line.strip()
-            if identifier:
-                processed.add(identifier)
+            line = line.strip()
+            if not line:
+                continue
+            # แก้: log แต่ละบรรทัดตอนนี้เป็น "identifier|เลขพัสดุ" (เผื่อบันทึก
+            # เลขพัสดุด้วย) เอาแค่ส่วนก่อน "|" มาเช็คว่าทำไปแล้วหรือยัง
+            # (รองรับ log เก่าที่ไม่มี "|" ด้วย เพราะ split("|", 1)[0] จะได้
+            # ทั้งบรรทัดเหมือนเดิมถ้าไม่มี "|")
+            identifier = line.split("|", 1)[0]
+            processed.add(identifier)
 
     return processed
 
@@ -244,7 +265,7 @@ def handle_dangerous_goods_question(window, timeout=5):
     ):
         print("[DEBUG] พบหน้าคำถามสินค้าอันตราย -> กด 'Confirmed' (ยืนยันว่าไม่มีสินค้าอันตราย)")
         wait_and_click(window, auto_id=DANGEROUS_GOODS_ANSWER_AUTO_ID, control_type="Button")
-        time.sleep(1)
+        time.sleep(0.5)  # แก้: ลดจาก 1 วิ (ลด latency)
         click_next(window)
 
 
@@ -266,7 +287,7 @@ def click_next(window):
         print("[DEBUG] ไม่พบปุ่มด้วย auto_id, ลอง fallback เป็น title_re='ถัดไป'")
         wait_and_click(window, title_re=r"^ถัดไป$")
 
-    time.sleep(1)
+    time.sleep(0.5)  # แก้: ลดจาก 1 วิ (ลด latency, click_next โดนเรียกบ่อยสุด)
 
 
 def report_validation_errors(window, timeout=1):
@@ -369,6 +390,66 @@ def validate_csv_headers(fieldnames):
         )
 
 
+def write_output_csv(rows, fieldnames, filename=OUTPUT_CSV_FILENAME):
+    """
+    เขียนไฟล์ CSV แยกต่างหาก (ไม่แตะ data.csv ต้นฉบับ) พร้อมคอลัมน์
+    TrackingNo ที่เติมค่าล่าสุดไว้ -- เขียนทับทั้งไฟล์ทุกครั้งที่เรียก
+    (เรียกหลังทำแต่ละรายการสำเร็จ ปลอดภัยเพราะแต่ละรายการใช้เวลาหลายวินาที
+    อยู่แล้วจาก UI automation ไม่ได้เขียนถี่จนกระทบ performance)
+    """
+    try:
+        with open(filename, mode="w", encoding="utf-8-sig", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+    except Exception as error:
+        print(f"[WARNING] เขียนไฟล์ {filename} ไม่สำเร็จ: {error}")
+
+
+_last_git_sync_time = 0
+
+
+def maybe_sync_output_to_git():
+    """
+    push ไฟล์ output (data_with_tracking.csv, success_log.txt) กลับขึ้น git
+    repo เดิมเป็นระยะ (throttle ไม่เกินทุก GIT_SYNC_INTERVAL_SECONDS) เพื่อให้
+    ดึงไฟล์จากเครื่องอื่นได้ผ่าน git pull โดยไม่ต้อง setup TCP server เอง
+    ถ้า git ไม่มี/push ไม่สำเร็จ (เช่น ไม่มีเน็ตตอนนั้น) แค่ print warning
+    ไม่ throw เพื่อไม่ให้กระทบ automation หลัก -- ลองใหม่ได้ในรอบถัดไป
+    """
+    global _last_git_sync_time
+
+    now = time.time()
+    if now - _last_git_sync_time < GIT_SYNC_INTERVAL_SECONDS:
+        return
+    _last_git_sync_time = now
+
+    try:
+        subprocess.run(
+            ["git", "add", OUTPUT_CSV_FILENAME, LOG_FILENAME],
+            check=True, capture_output=True, timeout=15, text=True,
+        )
+
+        commit_message = f"auto: update output {time.strftime('%Y-%m-%d %H:%M:%S')}"
+        commit_result = subprocess.run(
+            ["git", "commit", "-m", commit_message],
+            capture_output=True, timeout=15, text=True,
+        )
+        # แก้: commit อาจ "fail" ถ้าไม่มีอะไรเปลี่ยนเลยตั้งแต่รอบก่อน (ปกติ
+        # ไม่ใช่ error จริง) เช็คจาก stdout แทนที่จะโยน exception มั่วๆ
+        if commit_result.returncode != 0 and "nothing to commit" not in commit_result.stdout:
+            print(f"[WARNING] git commit output: {commit_result.stdout} {commit_result.stderr}")
+            return
+
+        subprocess.run(
+            ["git", "push"], check=True, capture_output=True, timeout=30, text=True,
+        )
+        print("[DEBUG] sync ไฟล์ output ขึ้น git แล้ว (ดึงจากเครื่องอื่นได้ด้วย git pull)")
+
+    except Exception as error:
+        print(f"[WARNING] sync ไฟล์ output ขึ้น git ไม่สำเร็จ: {error}")
+
+
 def is_control_visible(window, timeout=3, **criteria):
     """เช็คว่า control ปรากฏอยู่จริงหรือไม่ โดยไม่ throw ถ้าไม่เจอ"""
     try:
@@ -391,6 +472,34 @@ def wait_for_success(window, timeout=SUCCESS_WAIT_TIMEOUT):
 
     print("[WARNING] ไม่พบสัญญาณความสำเร็จภายในเวลาที่กำหนด")
     return False
+
+
+def capture_tracking_number(window, timeout=5):
+    """
+    อ่านเลขพัสดุ (tracking number) จากแผง SummaryView (สรุปรายการฝั่งขวา)
+    หลังพิมพ์ใบปะหน้าสำเร็จ -- แมตช์ด้วยรูปแบบเลขพัสดุเอง (TRACKING_NUMBER_RE)
+    แทนการหา label ภาษาไทย "เลขที่พัสดุ" เพราะ label มักเพี้ยนผ่าน UI
+    Automation เหมือนจุดอื่นๆ ที่เจอมา ถ้ามีหลายรายการใน cart (ยังไม่ Settle)
+    เอาตัวล่าสุด (รายการที่เพิ่งพิมพ์เสร็จ น่าจะอยู่ท้ายสุด)
+    """
+    try:
+        summary_view = window.child_window(auto_id="SummaryView", control_type="Custom")
+        summary_view.wait("exists visible", timeout=timeout)
+        wrapper = summary_view.wrapper_object()
+
+        texts = [d.window_text().strip() for d in wrapper.descendants(control_type="Text")]
+        matches = [t for t in texts if TRACKING_NUMBER_RE.match(t)]
+
+        if matches:
+            print(f"[DEBUG] พบเลขพัสดุ: {matches[-1]}")
+            return matches[-1]
+
+        print("[WARNING] ไม่พบเลขพัสดุใน SummaryView")
+        return None
+
+    except Exception as error:
+        print(f"[WARNING] อ่านเลขพัสดุไม่สำเร็จ: {error}")
+        return None
 
 
 def recover_ui(main_window, max_attempts=5):
@@ -501,9 +610,17 @@ def main():
             csv_reader = csv.DictReader(csv_file)
             validate_csv_headers(csv_reader.fieldnames)
 
+            # แก้: โหลดทุกแถวเข้า memory ก่อน (ไม่ได้ stream ทีละแถวแบบเดิม)
+            # เพื่อให้เติมค่า TrackingNo กลับเข้าไปในแถวที่ทำสำเร็จ แล้วเขียน
+            # ออกเป็นไฟล์ CSV แยก (OUTPUT_CSV_FILENAME) ได้ระหว่างรัน
+            rows = list(csv_reader)
+            output_fieldnames = list(csv_reader.fieldnames or [])
+            if "TrackingNo" not in output_fieldnames:
+                output_fieldnames.append("TrackingNo")
+
             with open(LOG_FILENAME, mode="a", encoding="utf-8-sig") as log_file:
 
-                for index, row in enumerate(csv_reader, start=1):
+                for index, row in enumerate(rows, start=1):
                     zip_code = clean_value(row.get("PostalCode"))
                     first_name = clean_value(row.get("FirstName"))
                     last_name = clean_value(row.get("LastName"))
@@ -550,7 +667,7 @@ def main():
                             control_type=HOME_CONTROL_TYPE,
                             wait_states="exists visible",
                         )
-                        time.sleep(1)
+                        time.sleep(0.5)  # แก้: ลดจาก 1 วิ (ลด latency)
 
                         wait_and_click(
                             main_window,
@@ -558,7 +675,7 @@ def main():
                             control_type="ListItem",
                             wait_states="exists visible",
                         )
-                        time.sleep(1)
+                        time.sleep(0.5)  # แก้: ลดจาก 1 วิ (ลด latency)
 
                         click_next(main_window)  # ถัดไป (หลังเลือกกล่อง)
 
@@ -566,7 +683,7 @@ def main():
                         handle_dangerous_goods_question(main_window)
 
                         click_next(main_window)  # ยืนยัน (ปุ่มเดียวกัน auto_id)
-                        time.sleep(1)
+                        time.sleep(0.5)  # แก้: ลดจาก 1 วิ (ลด latency)
 
                         # น้ำหนัก
                         # แก้: เพิ่ม auto_id="LabelForTextBox" ระบุให้เจาะจงว่า
@@ -590,7 +707,7 @@ def main():
                             auto_id="LabelForTextBox",
                         )
                         click_next(main_window)
-                        time.sleep(2)
+                        time.sleep(1.5)  # แก้: ลดจาก 2 วิ (รายการบริการโหลดจากเซิร์ฟเวอร์ เผื่อไว้หน่อย)
 
                         # เลือกบริการ -- ยืนยันจาก controls dump จริงแล้วว่า
                         # ปุ่มที่ต้องกดคือ auto_id="ShippingService_2572"
@@ -601,7 +718,7 @@ def main():
                             control_type="Button",
                             wait_states="exists visible",
                         )
-                        time.sleep(1)
+                        time.sleep(0.5)  # แก้: ลดจาก 1 วิ (ลด latency)
 
                         for round_number in range(1, 4):
                             print(f"[DEBUG] กดถัดไป รอบที่ {round_number}/3")
@@ -654,11 +771,30 @@ def main():
                                 "จะไม่บันทึกรายการนี้ลง log"
                             )
 
-                        log_file.write(unique_identifier + "\n")
+                        # แก้: อ่านเลขพัสดุ (tracking number) มาบันทึกไว้ด้วย
+                        # เผื่ออ่านไม่ได้ ก็ยังถือว่ารายการนี้สำเร็จ (บันทึก
+                        # ช่องเลขพัสดุว่างไว้ก่อน)
+                        tracking_number = capture_tracking_number(main_window)
+
+                        log_file.write(
+                            f"{unique_identifier}|{tracking_number or ''}\n"
+                        )
                         log_file.flush()
                         completed_names.add(unique_identifier)
 
-                        print(f"ทำรายการที่ {index} สำเร็จ และบันทึกลง Log แล้ว")
+                        # แก้: เติมเลขพัสดุกลับเข้าแถวนี้ แล้วเขียนไฟล์ CSV
+                        # output ใหม่ทั้งไฟล์ (เปิดด้วย Excel ดูได้เลย)
+                        row["TrackingNo"] = tracking_number or row.get("TrackingNo", "")
+                        write_output_csv(rows, output_fieldnames)
+
+                        # แก้: push ไฟล์ output ขึ้น git เป็นระยะ ดึงจาก
+                        # เครื่องอื่นได้ผ่าน git pull (throttle อยู่แล้วในตัว)
+                        maybe_sync_output_to_git()
+
+                        print(
+                            f"ทำรายการที่ {index} สำเร็จ และบันทึกลง Log แล้ว "
+                            f"(เลขพัสดุ: {tracking_number or 'ไม่พบ'})"
+                        )
 
                     except PywinautoTimeoutError:
                         print(f"Timeout ที่รายการ {index}: {first_name} {last_name}")
