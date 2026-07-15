@@ -481,7 +481,18 @@ def main():
                             click_next(main_window)
 
                         # ค้นหาและเลือกที่อยู่ (แก้: ใช้ address_search จาก CSV)
-                        fill_edit(main_window, address_search, title_re=r"^ที่อยู่$")
+                        # เพิ่ม auto_id="LabelForTextBox" เหมือนหน้าน้ำหนัก/
+                        # รหัสไปรษณีย์ กันแมตช์โดน label หัวข้อหน้าแทนช่องกรอกจริง
+                        # (resolve_edit_wrapper() ใน fill_edit จะไต่หา Edit
+                        # ข้างเคียงให้เองอยู่แล้ว แต่ระบุ auto_id ไว้ด้วยช่วยให้
+                        # เจาะจงถูกจุดตั้งแต่แรก ไม่ไปแมตช์ label อื่นที่ข้อความ
+                        # อาจซ้ำกัน)
+                        fill_edit(
+                            main_window,
+                            address_search,
+                            title_re=r"^ที่อยู่$",
+                            auto_id="LabelForTextBox",
+                        )
                         time.sleep(2)
                         send_keys("{DOWN}")
                         send_keys("{ENTER}")
@@ -490,12 +501,23 @@ def main():
                         click_next(main_window)
 
                         # ข้อมูลผู้รับ
-                        fill_edit(main_window, first_name, title_re=r"^ชื่อ$")
-                        fill_edit(main_window, last_name, title_re=r"^นามสกุล$")
+                        fill_edit(
+                            main_window,
+                            first_name,
+                            title_re=r"^ชื่อ$",
+                            auto_id="LabelForTextBox",
+                        )
+                        fill_edit(
+                            main_window,
+                            last_name,
+                            title_re=r"^นามสกุล$",
+                            auto_id="LabelForTextBox",
+                        )
                         fill_edit(
                             main_window,
                             phone_number,  # แก้: ใช้เบอร์จาก CSV
                             title_re=r".*หมายเลขโทรศัพท์.*",
+                            auto_id="LabelForTextBox",
                         )
 
                         # สิ้นสุดกระบวนการ
