@@ -270,7 +270,7 @@ def handle_dangerous_goods_question(window, timeout=5):
     ):
         print("[DEBUG] พบหน้าคำถามสินค้าอันตราย -> กด 'Confirmed' (ยืนยันว่าไม่มีสินค้าอันตราย)")
         wait_and_click(window, auto_id=DANGEROUS_GOODS_ANSWER_AUTO_ID, control_type="Button")
-        time.sleep(0.5)  # แก้: ลดจาก 1 วิ (ลด latency)
+        time.sleep(0.3)  # แก้: ลดจาก 0.5 วิ (ลด latency)
         click_next(window)
 
 
@@ -287,30 +287,33 @@ def handle_postcode_overlap_alert(window, timeout=5):
     ):
         print("[DEBUG] พบ Alert รหัสไปรษณีย์ครอบคลุมหลายพื้นที่ -> กด 'ดำเนินการ'")
         wait_and_click(window, auto_id="ProceedCommand", control_type="Button")
-        time.sleep(0.5)
+        time.sleep(0.3)
 
 
 def click_next(window):
     """
     กดปุ่มถัดไป/ยืนยัน (ปุ่มหลักของหน้า)
-    แก้: เดิมคลิกเมาส์ (wait_and_click) เปลี่ยนมาส่ง hotkey ENTER แทน เพราะ
-    ปุ่มนี้ (auto_id="LocalCommand_Submit") มีป้าย "ENTER" กำกับอยู่จริงทุก
-    ครั้งที่เจอใน controls dump (ยืนยันแล้ว ไม่ใช่เดา) เร็วกว่าคลิกเพราะข้าม
-    ขั้นตอนคำนวณตำแหน่ง/ขยับเมาส์ -- ยังคง wait ให้ปุ่มปรากฏก่อน เพื่อให้
-    แน่ใจว่าหน้าที่ถูกต้องพร้อมรับ ENTER แล้วจริงๆ ถ้าหาปุ่มไม่เจอเลย (หน้า
-    ไม่มีปุ่มนี้) ค่อย fallback ไปคลิก title_re="ถัดไป" แบบเดิม
+    แก้: เคยลองเปลี่ยนเป็นส่ง hotkey ENTER แทนคลิก (เร็วกว่า) แต่เจอปัญหาจริง
+    ว่าหน้าที่เพิ่งกรอกช่องข้อความเสร็จ (เช่นหน้าข้อมูลผู้ส่ง-ผู้รับ) focus
+    ยังค้างอยู่ที่ช่อง Edit ล่าสุด ทำให้ ENTER ถูกช่องกรอกนั้น "กลืน" ไป ไม่ไป
+    ถึงปุ่ม Submit จริง เลยติดอยู่หน้าเดิม -- กลับมาคลิกเมาส์ตรงๆ เหมือนเดิม
+    เพื่อความถูกต้อง (เชื่อถือได้กว่า ไม่ขึ้นกับว่า focus ค้างอยู่ตรงไหน)
+    ลองใช้ auto_id="LocalCommand_Submit" ก่อน ถ้าไม่เจอค่อย fallback ไปหา
+    title_re="ถัดไป"
     """
     try:
-        control = window.child_window(
-            auto_id=SUBMIT_AUTO_ID, control_type="Button"
+        wait_and_click(
+            window,
+            auto_id=SUBMIT_AUTO_ID,
+            control_type="Button",
+            wait_states="exists visible",
+            timeout=5,
         )
-        control.wait("exists visible", timeout=5)
-        window.type_keys("{ENTER}")
     except Exception:
         print("[DEBUG] ไม่พบปุ่มด้วย auto_id, ลอง fallback เป็น title_re='ถัดไป'")
         wait_and_click(window, title_re=r"^ถัดไป$")
 
-    time.sleep(0.5)  # แก้: ลดจาก 1 วิ (ลด latency, click_next โดนเรียกบ่อยสุด)
+    time.sleep(0.3)  # แก้: ลดจาก 0.5 วิ (ลด latency, click_next โดนเรียกบ่อยสุด)
 
 
 def report_validation_errors(window, timeout=1):
@@ -657,7 +660,7 @@ def main():
                             control_type=HOME_CONTROL_TYPE,
                             wait_states="exists visible",
                         )
-                        time.sleep(0.5)  # แก้: ลดจาก 1 วิ (ลด latency)
+                        time.sleep(0.3)  # แก้: ลดจาก 0.5 วิ (ลด latency)
 
                         wait_and_click(
                             main_window,
@@ -665,7 +668,7 @@ def main():
                             control_type="ListItem",
                             wait_states="exists visible",
                         )
-                        time.sleep(0.5)  # แก้: ลดจาก 1 วิ (ลด latency)
+                        time.sleep(0.3)  # แก้: ลดจาก 0.5 วิ (ลด latency)
 
                         click_next(main_window)  # ถัดไป (หลังเลือกกล่อง)
 
@@ -673,7 +676,7 @@ def main():
                         handle_dangerous_goods_question(main_window)
 
                         click_next(main_window)  # ยืนยัน (ปุ่มเดียวกัน auto_id)
-                        time.sleep(0.5)  # แก้: ลดจาก 1 วิ (ลด latency)
+                        time.sleep(0.3)  # แก้: ลดจาก 0.5 วิ (ลด latency)
 
                         # น้ำหนัก
                         # แก้: เพิ่ม auto_id="LabelForTextBox" ระบุให้เจาะจงว่า
@@ -713,7 +716,7 @@ def main():
                             control_type="Button",
                             wait_states="exists visible",
                         )
-                        time.sleep(0.5)  # แก้: ลดจาก 1 วิ (ลด latency)
+                        time.sleep(0.3)  # แก้: ลดจาก 0.5 วิ (ลด latency)
 
                         for round_number in range(1, 4):
                             print(f"[DEBUG] กดถัดไป รอบที่ {round_number}/3")
