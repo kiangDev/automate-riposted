@@ -293,17 +293,19 @@ def handle_postcode_overlap_alert(window, timeout=5):
 def click_next(window):
     """
     กดปุ่มถัดไป/ยืนยัน (ปุ่มหลักของหน้า)
-    ลองใช้ auto_id="LocalCommand_Submit" ก่อน (เชื่อถือได้กว่า title ภาษาไทย
-    ที่เพี้ยนจาก UI Automation) ถ้าไม่เจอค่อย fallback ไปหา title "ถัดไป"
+    แก้: เดิมคลิกเมาส์ (wait_and_click) เปลี่ยนมาส่ง hotkey ENTER แทน เพราะ
+    ปุ่มนี้ (auto_id="LocalCommand_Submit") มีป้าย "ENTER" กำกับอยู่จริงทุก
+    ครั้งที่เจอใน controls dump (ยืนยันแล้ว ไม่ใช่เดา) เร็วกว่าคลิกเพราะข้าม
+    ขั้นตอนคำนวณตำแหน่ง/ขยับเมาส์ -- ยังคง wait ให้ปุ่มปรากฏก่อน เพื่อให้
+    แน่ใจว่าหน้าที่ถูกต้องพร้อมรับ ENTER แล้วจริงๆ ถ้าหาปุ่มไม่เจอเลย (หน้า
+    ไม่มีปุ่มนี้) ค่อย fallback ไปคลิก title_re="ถัดไป" แบบเดิม
     """
     try:
-        wait_and_click(
-            window,
-            auto_id=SUBMIT_AUTO_ID,
-            control_type="Button",
-            wait_states="exists visible",
-            timeout=5,
+        control = window.child_window(
+            auto_id=SUBMIT_AUTO_ID, control_type="Button"
         )
+        control.wait("exists visible", timeout=5)
+        window.type_keys("{ENTER}")
     except Exception:
         print("[DEBUG] ไม่พบปุ่มด้วย auto_id, ลอง fallback เป็น title_re='ถัดไป'")
         wait_and_click(window, title_re=r"^ถัดไป$")
