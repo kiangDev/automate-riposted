@@ -269,6 +269,22 @@ def handle_dangerous_goods_question(window, timeout=5):
         click_next(window)
 
 
+def handle_postcode_overlap_alert(window, timeout=5):
+    """
+    หลังกรอกรหัสไปรษณีย์ บางครั้ง (ไม่เสมอไป) จะมี Alert แทรกขึ้นมาว่ารหัส
+    ไปรษณีย์นี้ครอบคลุมหลายพื้นที่ (auto_id="THP.Shipping.PostcodeOverlap.
+    AlertView") มี 2 ปุ่ม: "เปลี่ยน" (ChangeCommand) กับ "ดำเนินการ"
+    (ProceedCommand) -- กด "ดำเนินการ" (Proceed) เป็น default เพื่อไปต่อโดย
+    ไม่ต้องเลือกพื้นที่เจาะจง เช็คแบบเบาๆ ไม่เจอก็ข้ามไปเงียบๆ ไม่ throw
+    """
+    if is_control_visible(
+        window, timeout=timeout, auto_id="ProceedCommand", control_type="Button"
+    ):
+        print("[DEBUG] พบ Alert รหัสไปรษณีย์ครอบคลุมหลายพื้นที่ -> กด 'ดำเนินการ'")
+        wait_and_click(window, auto_id="ProceedCommand", control_type="Button")
+        time.sleep(0.5)
+
+
 def click_next(window):
     """
     กดปุ่มถัดไป/ยืนยัน (ปุ่มหลักของหน้า)
@@ -707,6 +723,11 @@ def main():
                             auto_id="LabelForTextBox",
                         )
                         click_next(main_window)
+
+                        # แก้: รหัสไปรษณีย์บางเลขครอบคลุมหลายพื้นที่ จะมี
+                        # Alert แทรกถามให้ยืนยัน (ถ้ามี)
+                        handle_postcode_overlap_alert(main_window)
+
                         time.sleep(1.2)  # แก้: ลดจาก 2 วิ (รายการบริการโหลดจากเซิร์ฟเวอร์ เผื่อไว้หน่อย)
 
                         # เลือกบริการ -- ยืนยันจาก controls dump จริงแล้วว่า
