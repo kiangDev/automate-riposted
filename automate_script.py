@@ -9,6 +9,7 @@ from pywinauto import findwindows
 from pywinauto.application import Application
 from pywinauto.keyboard import send_keys
 from pywinauto.timings import TimeoutError as PywinautoTimeoutError
+from pywinauto.timings import Timings
 
 
 CSV_FILENAME = "data.csv"
@@ -581,6 +582,13 @@ def export_controls(main_window):
 
 
 def main():
+    # แก้: ลด latency ฝังในตัว pywinauto เอง (delay เล็กๆ หลัง click/
+    # set_focus, ช่วง poll หา control ฯลฯ ที่ปกติเราไม่เห็น เพราะไม่ใช่
+    # time.sleep() ที่เราเขียนเอง) preset "fast" ลดค่าพวกนี้ทั้งหมดทีเดียว
+    # ถ้าลองแล้วเริ่มพังบ่อยขึ้น (คลิกไม่ทันจริง) ให้คอมเมนต์บรรทัดนี้ออก
+    # เพื่อกลับไปใช้ค่า default เดิม
+    Timings.fast()
+
     completed_names = load_processed_data()
 
     print(f"พบประวัติที่ทำสำเร็จแล้ว: {len(completed_names)} รายการ")
@@ -671,7 +679,12 @@ def main():
                     print(f"--- กำลังทำรายการที่ {index}: {first_name} {last_name} ---")
 
                     try:
-                        main_window.wait("exists visible enabled", timeout=15)
+                        # แก้: ลด "enabled" ออก เหลือแค่ "exists visible"
+                        # (แอปนี้รายงานสถานะ enabled ช้า/ไม่แน่นอนหลังพิมพ์
+                        # เสร็จ ทำให้จุดนี้เป็นจุดที่รอนานที่สุดตอนวนรอบใหม่
+                        # -- ผู้ใช้สังเกตเจอ ยืนยันแล้วว่าไม่จำเป็นต้องรอ
+                        # enabled จริงๆ)
+                        main_window.wait("exists visible", timeout=15)
                         main_window.set_focus()
 
                         # หน้าเริ่มต้น (แก้: ใช้ auto_id แทน title ภาษาไทยที่เพี้ยน
