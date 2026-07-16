@@ -270,7 +270,7 @@ def handle_dangerous_goods_question(window, timeout=5):
     ):
         print("[DEBUG] พบหน้าคำถามสินค้าอันตราย -> กด 'Confirmed' (ยืนยันว่าไม่มีสินค้าอันตราย)")
         wait_and_click(window, auto_id=DANGEROUS_GOODS_ANSWER_AUTO_ID, control_type="Button")
-        time.sleep(0.3)  # แก้: ลดจาก 0.5 วิ (ลด latency)
+        time.sleep(0.4)  # แก้: ปรับเป็น 0.4 วิ (ลด latency)
         click_next(window)
 
 
@@ -291,7 +291,7 @@ def handle_postcode_overlap_alert(window, timeout=5):
     ):
         print("[DEBUG] พบ Alert แนะนำรหัสไปรษณีย์ -> กด 'ยกเลิก' (เก็บค่าที่กรอกเอง)")
         wait_and_click(window, auto_id="ChangeCommand", control_type="Button")
-        time.sleep(0.3)
+        time.sleep(0.4)
 
 
 def click_next(window):
@@ -317,7 +317,7 @@ def click_next(window):
         print("[DEBUG] ไม่พบปุ่มด้วย auto_id, ลอง fallback เป็น title_re='ถัดไป'")
         wait_and_click(window, title_re=r"^ถัดไป$")
 
-    time.sleep(0.3)  # แก้: ลดจาก 0.5 วิ (ลด latency, click_next โดนเรียกบ่อยสุด)
+    time.sleep(0.4)  # แก้: ปรับเป็น 0.4 วิ (ลด latency, click_next โดนเรียกบ่อยสุด)
 
 
 def report_validation_errors(window, timeout=1):
@@ -668,7 +668,7 @@ def main():
                             control_type=HOME_CONTROL_TYPE,
                             wait_states="exists visible",
                         )
-                        time.sleep(0.3)  # แก้: ลดจาก 0.5 วิ (ลด latency)
+                        time.sleep(0.4)  # แก้: ปรับเป็น 0.4 วิ (ลด latency)
 
                         wait_and_click(
                             main_window,
@@ -676,7 +676,7 @@ def main():
                             control_type="ListItem",
                             wait_states="exists visible",
                         )
-                        time.sleep(0.3)  # แก้: ลดจาก 0.5 วิ (ลด latency)
+                        time.sleep(0.4)  # แก้: ปรับเป็น 0.4 วิ (ลด latency)
 
                         click_next(main_window)  # ถัดไป (หลังเลือกกล่อง)
 
@@ -684,7 +684,7 @@ def main():
                         handle_dangerous_goods_question(main_window)
 
                         click_next(main_window)  # ยืนยัน (ปุ่มเดียวกัน auto_id)
-                        time.sleep(0.3)  # แก้: ลดจาก 0.5 วิ (ลด latency)
+                        time.sleep(0.4)  # แก้: ปรับเป็น 0.4 วิ (ลด latency)
 
                         # น้ำหนัก
                         # แก้: เพิ่ม auto_id="LabelForTextBox" ระบุให้เจาะจงว่า
@@ -724,7 +724,7 @@ def main():
                             control_type="Button",
                             wait_states="exists visible",
                         )
-                        time.sleep(0.3)  # แก้: ลดจาก 0.5 วิ (ลด latency)
+                        time.sleep(0.4)  # แก้: ปรับเป็น 0.4 วิ (ลด latency)
 
                         for round_number in range(1, 4):
                             print(f"[DEBUG] กดถัดไป รอบที่ {round_number}/3")
