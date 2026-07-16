@@ -762,7 +762,7 @@ def main():
 
                         # สิ้นสุดกระบวนการ
                         wait_and_click(main_window, title_re=r"^ไม่$")
-                        time.sleep(0.5)
+                        time.sleep(0.7)
 
                         # แก้: ตรวจสอบหน้า success จริงก่อนบันทึก log
                         if not wait_for_success(main_window):
