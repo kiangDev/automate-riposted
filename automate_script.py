@@ -276,17 +276,21 @@ def handle_dangerous_goods_question(window, timeout=5):
 
 def handle_postcode_overlap_alert(window, timeout=5):
     """
-    หลังกรอกรหัสไปรษณีย์ บางครั้ง (ไม่เสมอไป) จะมี Alert แทรกขึ้นมาว่ารหัส
-    ไปรษณีย์นี้ครอบคลุมหลายพื้นที่ (auto_id="THP.Shipping.PostcodeOverlap.
-    AlertView") มี 2 ปุ่ม: "เปลี่ยน" (ChangeCommand) กับ "ดำเนินการ"
-    (ProceedCommand) -- กด "ดำเนินการ" (Proceed) เป็น default เพื่อไปต่อโดย
-    ไม่ต้องเลือกพื้นที่เจาะจง เช็คแบบเบาๆ ไม่เจอก็ข้ามไปเงียบๆ ไม่ throw
+    หลังกรอกรหัสไปรษณีย์ บางครั้ง (ไม่เสมอไป) จะมี Alert แทรกขึ้นมา
+    (auto_id="THP.Shipping.PostcodeOverlap.AlertView") มี 2 ปุ่ม:
+    "ChangeCommand" (ESC) กับ "ProceedCommand" (ENTER, ปุ่มสีฟ้า/primary)
+
+    แก้: เดิมเข้าใจผิดว่า ProceedCommand = เก็บค่าที่กรอกเอง เลยกดปุ่มนี้เป็น
+    default -- แต่จากภาพหน้าจอจริง (dialog "รหัสไปรษณีย์ที่ป้อนไม่ตรงกับที่
+    แนะนำ") ยืนยันแล้วว่าปุ่ม ENTER/สีฟ้า คือ "ตกลง" = ยอมรับเลขที่แนะนำ
+    (ไม่ใช่สิ่งที่ต้องการ) ส่วนปุ่ม ESC คือ "ยกเลิก" = เก็บค่าที่กรอกเองไว้
+    (ตรงกับที่ต้องการ) เลยสลับมากด ChangeCommand (ESC) เป็น default แทน
     """
     if is_control_visible(
-        window, timeout=timeout, auto_id="ProceedCommand", control_type="Button"
+        window, timeout=timeout, auto_id="ChangeCommand", control_type="Button"
     ):
-        print("[DEBUG] พบ Alert รหัสไปรษณีย์ครอบคลุมหลายพื้นที่ -> กด 'ดำเนินการ'")
-        wait_and_click(window, auto_id="ProceedCommand", control_type="Button")
+        print("[DEBUG] พบ Alert แนะนำรหัสไปรษณีย์ -> กด 'ยกเลิก' (เก็บค่าที่กรอกเอง)")
+        wait_and_click(window, auto_id="ChangeCommand", control_type="Button")
         time.sleep(0.3)
 
 
@@ -739,7 +743,9 @@ def main():
                         # 0.3 วิที่ click_next() รอไว้ในตัว ถ้าเร็วไปสคริปต์
                         # อาจกรอกใส่ element เก่าที่กำลังถูกทำลายทิ้งจากหน้า
                         # ก่อนหน้า ทำให้ดูเหมือนกรอกไม่เข้า (พบปัญหานี้จริง)
-                        time.sleep(1.5)
+                        # แก้: เพิ่มจาก 1.5 เป็น 2.5 วิ ตามที่ขอ เผื่อเวลาให้
+                        # มากขึ้นอีกหน่อยเพื่อความเสถียร
+                        time.sleep(2.5)
 
                         # ข้อมูลผู้รับ
                         fill_edit(
