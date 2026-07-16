@@ -453,6 +453,10 @@ def wait_for_success(window, timeout=SUCCESS_WAIT_TIMEOUT):
         return True
 
     print("[WARNING] ไม่พบสัญญาณความสำเร็จภายในเวลาที่กำหนด")
+    # แก้: dump control tree อัตโนมัติทันทีที่หาไม่เจอ (SUCCESS_TITLE_RE ยังไม่
+    # เคยยืนยันว่าตรงกับข้อความจริง) กันไม่ต้องคอยจับจังหวะ dump เองแบบเดิม
+    # -- ไฟล์นี้จะได้มาแม้รันแบบปล่อยทิ้งไว้ไม่มีคนเฝ้าหน้าจอ
+    dump_controls_on_failure(window, "success_screen")
     return False
 
 
