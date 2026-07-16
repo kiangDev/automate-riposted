@@ -707,7 +707,7 @@ def main():
                             auto_id="LabelForTextBox",
                         )
                         click_next(main_window)
-                        time.sleep(1.5)  # แก้: ลดจาก 2 วิ (รายการบริการโหลดจากเซิร์ฟเวอร์ เผื่อไว้หน่อย)
+                        time.sleep(1.2)  # แก้: ลดจาก 2 วิ (รายการบริการโหลดจากเซิร์ฟเวอร์ เผื่อไว้หน่อย)
 
                         # เลือกบริการ -- ยืนยันจาก controls dump จริงแล้วว่า
                         # ปุ่มที่ต้องกดคือ auto_id="ShippingService_2572"
@@ -762,7 +762,7 @@ def main():
 
                         # สิ้นสุดกระบวนการ
                         wait_and_click(main_window, title_re=r"^ไม่$")
-                        time.sleep(0.7)
+                        time.sleep(0.5)
 
                         # แก้: ตรวจสอบหน้า success จริงก่อนบันทึก log
                         if not wait_for_success(main_window):
