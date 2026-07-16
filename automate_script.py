@@ -1,7 +1,6 @@
 import csv
 import os
 import re
-import subprocess
 import time
 import traceback
 
@@ -9,7 +8,6 @@ from pywinauto import findwindows
 from pywinauto.application import Application
 from pywinauto.keyboard import send_keys
 from pywinauto.timings import TimeoutError as PywinautoTimeoutError
-from pywinauto.timings import Timings
 
 
 CSV_FILENAME = "data.csv"
@@ -18,11 +16,6 @@ CONTROLS_FILENAME = "controls.txt"
 # แก้: ไฟล์ output แยกต่างหาก (ไม่แก้ data.csv ต้นฉบับ) มีคอลัมน์ TrackingNo
 # เติมเลขพัสดุที่จับได้กลับเข้าไปทุกครั้งที่ทำรายการสำเร็จ เปิดด้วย Excel ได้
 OUTPUT_CSV_FILENAME = "data_with_tracking.csv"
-
-# แก้: push ไฟล์ output กลับขึ้น git repo เดิม (ที่เครื่องนี้ต่อ GitHub อยู่
-# แล้ว) เป็นระยะ เพื่อให้ดึงไฟล์จากเครื่องอื่นได้ผ่าน git pull โดยไม่ต้อง
-# setup อะไรเพิ่ม -- throttle ไม่ให้ push ถี่เกินไป (หน่วยเป็นวินาที)
-GIT_SYNC_INTERVAL_SECONDS = 300
 
 # ค่า default ใช้เมื่อ CSV ไม่มีคอลัมน์ หรือช่องนั้นว่าง
 DEFAULT_PHONE_NUMBER = "0987654321"
@@ -434,50 +427,6 @@ def write_output_csv(rows, fieldnames, filename=OUTPUT_CSV_FILENAME):
         print(f"[WARNING] เขียนไฟล์ {filename} ไม่สำเร็จ: {error}")
 
 
-_last_git_sync_time = 0
-
-
-def maybe_sync_output_to_git():
-    """
-    push ไฟล์ output (data_with_tracking.csv, success_log.txt) กลับขึ้น git
-    repo เดิมเป็นระยะ (throttle ไม่เกินทุก GIT_SYNC_INTERVAL_SECONDS) เพื่อให้
-    ดึงไฟล์จากเครื่องอื่นได้ผ่าน git pull โดยไม่ต้อง setup TCP server เอง
-    ถ้า git ไม่มี/push ไม่สำเร็จ (เช่น ไม่มีเน็ตตอนนั้น) แค่ print warning
-    ไม่ throw เพื่อไม่ให้กระทบ automation หลัก -- ลองใหม่ได้ในรอบถัดไป
-    """
-    global _last_git_sync_time
-
-    now = time.time()
-    if now - _last_git_sync_time < GIT_SYNC_INTERVAL_SECONDS:
-        return
-    _last_git_sync_time = now
-
-    try:
-        subprocess.run(
-            ["git", "add", OUTPUT_CSV_FILENAME, LOG_FILENAME],
-            check=True, capture_output=True, timeout=15, text=True,
-        )
-
-        commit_message = f"auto: update output {time.strftime('%Y-%m-%d %H:%M:%S')}"
-        commit_result = subprocess.run(
-            ["git", "commit", "-m", commit_message],
-            capture_output=True, timeout=15, text=True,
-        )
-        # แก้: commit อาจ "fail" ถ้าไม่มีอะไรเปลี่ยนเลยตั้งแต่รอบก่อน (ปกติ
-        # ไม่ใช่ error จริง) เช็คจาก stdout แทนที่จะโยน exception มั่วๆ
-        if commit_result.returncode != 0 and "nothing to commit" not in commit_result.stdout:
-            print(f"[WARNING] git commit output: {commit_result.stdout} {commit_result.stderr}")
-            return
-
-        subprocess.run(
-            ["git", "push"], check=True, capture_output=True, timeout=30, text=True,
-        )
-        print("[DEBUG] sync ไฟล์ output ขึ้น git แล้ว (ดึงจากเครื่องอื่นได้ด้วย git pull)")
-
-    except Exception as error:
-        print(f"[WARNING] sync ไฟล์ output ขึ้น git ไม่สำเร็จ: {error}")
-
-
 def is_control_visible(window, timeout=3, **criteria):
     """เช็คว่า control ปรากฏอยู่จริงหรือไม่ โดยไม่ throw ถ้าไม่เจอ"""
     try:
@@ -593,12 +542,11 @@ def export_controls(main_window):
 
 
 def main():
-    # แก้: ลด latency ฝังในตัว pywinauto เอง (delay เล็กๆ หลัง click/
-    # set_focus, ช่วง poll หา control ฯลฯ ที่ปกติเราไม่เห็น เพราะไม่ใช่
-    # time.sleep() ที่เราเขียนเอง) preset "fast" ลดค่าพวกนี้ทั้งหมดทีเดียว
-    # ถ้าลองแล้วเริ่มพังบ่อยขึ้น (คลิกไม่ทันจริง) ให้คอมเมนต์บรรทัดนี้ออก
-    # เพื่อกลับไปใช้ค่า default เดิม
-    Timings.fast()
+    # แก้: เอา Timings.fast() ออก -- ทำให้เชื่อมต่อ/ค้างนานตอนเริ่มโปรแกรม
+    # (สงสัยว่า retry interval ที่ถี่เกินไปชนกับปัญหา COM/UI Automation
+    # ไม่เสถียรของแอป Riposte เอง ที่เคยเจอ error "COM event unable to
+    # invoke subscribers" มาก่อนหน้านี้แล้วตอน dump control tree)
+    # กลับไปใช้ค่า default ของ pywinauto แทน
 
     completed_names = load_processed_data()
 
@@ -831,10 +779,6 @@ def main():
                         # output ใหม่ทั้งไฟล์ (เปิดด้วย Excel ดูได้เลย)
                         row["TrackingNo"] = tracking_number or row.get("TrackingNo", "")
                         write_output_csv(rows, output_fieldnames)
-
-                        # แก้: push ไฟล์ output ขึ้น git เป็นระยะ ดึงจาก
-                        # เครื่องอื่นได้ผ่าน git pull (throttle อยู่แล้วในตัว)
-                        maybe_sync_output_to_git()
 
                         print(
                             f"ทำรายการที่ {index} สำเร็จ และบันทึกลง Log แล้ว "
