@@ -276,21 +276,16 @@ def handle_dangerous_goods_question(window, timeout=5):
 
 def handle_postcode_overlap_alert(window, timeout=5):
     """
-    หลังกรอกรหัสไปรษณีย์ บางครั้ง (ไม่เสมอไป) จะมี Alert แทรกขึ้นมา
-    (auto_id="THP.Shipping.PostcodeOverlap.AlertView") มี 2 ปุ่ม:
-    "ChangeCommand" (ESC) กับ "ProceedCommand" (ENTER, ปุ่มสีฟ้า/primary)
-
-    แก้: เดิมเข้าใจผิดว่า ProceedCommand = เก็บค่าที่กรอกเอง เลยกดปุ่มนี้เป็น
-    default -- แต่จากภาพหน้าจอจริง (dialog "รหัสไปรษณีย์ที่ป้อนไม่ตรงกับที่
-    แนะนำ") ยืนยันแล้วว่าปุ่ม ENTER/สีฟ้า คือ "ตกลง" = ยอมรับเลขที่แนะนำ
-    (ไม่ใช่สิ่งที่ต้องการ) ส่วนปุ่ม ESC คือ "ยกเลิก" = เก็บค่าที่กรอกเองไว้
-    (ตรงกับที่ต้องการ) เลยสลับมากด ChangeCommand (ESC) เป็น default แทน
+    หลังกรอกรหัสไปรษณีย์ บางครั้ง (ไม่เสมอไป) จะมี Alert แทรกขึ้นมา มี 2 ปุ่ม:
+    "ChangeCommand" กับ "ProceedCommand" -- กลับไปใช้เวอร์ชันเดิมที่ยืนยันแล้ว
+    ว่าใช้งานได้จริง (แม้ต้องรอ timeout บ้าง) ตามที่ตกลงกันไว้ ไม่ optimize
+    เพิ่มแล้ว เช็คแบบเบาๆ ไม่เจอก็ข้ามไปเงียบๆ ไม่ throw
     """
     if is_control_visible(
-        window, timeout=timeout, auto_id="ChangeCommand", control_type="Button"
+        window, timeout=timeout, auto_id="ProceedCommand", control_type="Button"
     ):
-        print("[DEBUG] พบ Alert แนะนำรหัสไปรษณีย์ -> กด 'ยกเลิก' (เก็บค่าที่กรอกเอง)")
-        wait_and_click(window, auto_id="ChangeCommand", control_type="Button")
+        print("[DEBUG] พบ Alert รหัสไปรษณีย์ -> กด 'ดำเนินการ'")
+        wait_and_click(window, auto_id="ProceedCommand", control_type="Button")
         time.sleep(0.4)
 
 
