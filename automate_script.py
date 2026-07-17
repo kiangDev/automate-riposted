@@ -317,6 +317,56 @@ def click_next(window):
     time.sleep(0.4)  # แก้: ปรับเป็น 0.4 วิ (ลด latency, click_next โดนเรียกบ่อยสุด)
 
 
+def get_main_pane_auto_id(window):
+    """
+    คืน auto_id ของ pane เนื้อหาหลัก (title="Main") ของหน้าปัจจุบัน เช่น
+    "EG.Shipping.MailPieceCategory", "EG.CustomerCapture.CustomerCaptureView"
+    -- ยืนยันจาก controls dump จริงแล้วว่า title="Main" คงที่ทุกหน้า มีแค่
+    auto_id ที่เปลี่ยนไปตามหน้า ใช้เป็น "ลายนิ้วมือ" เช็คว่าหน้าเปลี่ยนจริง
+    หรือไม่หลังกดถัดไป คืน None ถ้าหาไม่เจอ (ไม่ throw)
+    """
+    try:
+        main_pane = window.child_window(title="Main", control_type="Custom")
+        return main_pane.wrapper_object().element_info.automation_id
+    except Exception:
+        return None
+
+
+def click_next_verified(window, max_attempts=3, settle_time=0.6):
+    """
+    แก้: ผู้ใช้สังเกตเจอว่าบางครั้งกด "ถัดไป" แล้วปุ่ม "ไม่ติด" จริง (หน้าไม่
+    เปลี่ยน) โดยเฉพาะหน้าข้อมูลผู้ส่ง (customer) ที่บางครั้งค้างนิ่ง แต่
+    click_next() เดิมไม่เคยเช็คว่าหน้าเปลี่ยนจริงหรือเปล่า เลยเดินหน้าไปเรียก
+    ฟังก์ชันถัดไป (เช่น กรอกที่อยู่) ทั้งที่ยังอยู่หน้าเดิม -> เกิด error ตามมา
+
+    ฟังก์ชันนี้เช็ค auto_id ของ pane "Main" ก่อน/หลังกด ถ้ายังไม่เปลี่ยนให้ลอง
+    กดซ้ำ (สูงสุด max_attempts ครั้ง) ถ้าลองครบแล้วยังไม่เปลี่ยน ให้แค่เตือน
+    แล้วปล่อยผ่านไปเลย (ไม่ throw หยุดสคริปต์ -- ตามที่ตกลงกันไว้ว่าข้ามได้
+    ไม่ต้องกรอกอะไรในหน้านี้)
+    """
+    page_before = get_main_pane_auto_id(window)
+
+    for attempt in range(1, max_attempts + 1):
+        click_next(window)
+        time.sleep(settle_time)
+        page_after = get_main_pane_auto_id(window)
+
+        if page_after != page_before or page_after is None:
+            return True
+
+        print(
+            f"[WARNING] กดถัดไปแล้วหน้ายังไม่เปลี่ยน (auto_id เดิม={page_before!r}) "
+            f"ลองกดซ้ำ ({attempt}/{max_attempts})"
+        )
+
+    print(
+        "[WARNING] กดถัดไปครบ "
+        f"{max_attempts} ครั้งแล้วหน้ายังไม่เปลี่ยน -- ข้ามไปเลยตามที่ตกลงกันไว้ "
+        "(ไม่ให้สคริปต์ค้าง)"
+    )
+    return False
+
+
 def report_validation_errors(window, timeout=1):
     """
     บางหน้า (เช่น ข้อมูลผู้รับ) มี ListBox auto_id="ValidationErrors" ที่โชว์
@@ -725,9 +775,15 @@ def main():
                         )
                         time.sleep(0.4)  # แก้: ปรับเป็น 0.4 วิ (ลด latency)
 
+                        # แก้: ช่วงนี้มีโอกาสเจอหน้า "ข้อมูลผู้ส่ง" (customer
+                        # ที่มาใช้บริการ) แทรกมา บางครั้งกดถัดไปแล้วหน้าไม่
+                        # เปลี่ยนจริง (ผู้ใช้สังเกตเจอ) แล้วสคริปต์เดินหน้าไป
+                        # กรอกที่อยู่บนหน้าเดิมที่ค้างอยู่ -> error เปลี่ยนมาใช้
+                        # click_next_verified() แทน (เช็คว่าหน้าเปลี่ยนจริง
+                        # ก่อนไปต่อ ไม่กรอกอะไรในหน้านี้ ข้ามได้เลยตามที่ตกลง)
                         for round_number in range(1, 4):
                             print(f"[DEBUG] กดถัดไป รอบที่ {round_number}/3")
-                            click_next(main_window)
+                            click_next_verified(main_window)
 
                         # ค้นหาและเลือกที่อยู่ (แก้: ใช้ address_search จาก CSV
                         # เป็นคำค้นหาแรก ถ้าไม่เจอผลลัพธ์ จะไล่ลองคำถัดไปใน
@@ -747,23 +803,30 @@ def main():
                         time.sleep(2.5)
 
                         # ข้อมูลผู้รับ
+                        # แก้: เจอจาก controls dump จริงของหน้านี้
+                        # (EG.CustomerCapture.CustomerCaptureView) ว่าช่อง Edit
+                        # แต่ละช่องมี auto_id ภาษาอังกฤษตรงตัวอยู่แล้ว
+                        # (CustomerFirstName, CustomerLastName, PhoneNumber)
+                        # ไม่ต้องพึ่ง title_re ภาษาไทยที่เพี้ยน (mojibake) +
+                        # ไต่หา Edit ข้างเคียงผ่าน LabelForTextBox แบบเดิมอีก
+                        # ต่อไป -- ยิงตรง auto_id เลย แม่นกว่าและเร็วกว่า
                         fill_edit(
                             main_window,
                             first_name,
-                            title_re=r"^ชื่อ$",
-                            auto_id="LabelForTextBox",
+                            auto_id="CustomerFirstName",
+                            control_type="Edit",
                         )
                         fill_edit(
                             main_window,
                             last_name,
-                            title_re=r"^นามสกุล$",
-                            auto_id="LabelForTextBox",
+                            auto_id="CustomerLastName",
+                            control_type="Edit",
                         )
                         fill_edit(
                             main_window,
                             phone_number,  # แก้: ใช้เบอร์จาก CSV
-                            title_re=r".*หมายเลขโทรศัพท์.*",
-                            auto_id="LabelForTextBox",
+                            auto_id="PhoneNumber",
+                            control_type="Edit",
                         )
 
                         # แก้: หน้า "ข้อมูลผู้รับ" (EG.CustomerCapture.
