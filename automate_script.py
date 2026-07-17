@@ -896,10 +896,13 @@ def main():
                         log_file.flush()
                         completed_names.add(unique_identifier)
 
-                        # แก้: เติมเลขพัสดุกลับเข้าแถวนี้ แล้วเขียนไฟล์ CSV
-                        # output ใหม่ทั้งไฟล์ (เปิดด้วย Excel ดูได้เลย)
+                        # แก้: ตัด write_output_csv() ออกจากตรงนี้ตามที่ขอ
+                        # (เพื่อ performance) -- เดิมเขียน CSV ใหม่ทั้งไฟล์ทุก
+                        # แถวที่สำเร็จ ยิ่งรันไปนานยิ่งช้าขึ้นเรื่อยๆ (ไฟล์ใหญ่
+                        # ขึ้นทุกรอบ) ย้ายไปเขียนครั้งเดียวตอนจบทั้งหมดแทน
+                        # (ท้ายฟังก์ชัน main() ด้านล่าง) เก็บแค่ค่าไว้ใน memory
+                        # ตรงนี้ (ไม่มี I/O เพิ่ม แทบไม่กินเวลาเลย)
                         row["TrackingNo"] = tracking_number or row.get("TrackingNo", "")
-                        write_output_csv(rows, output_fieldnames)
 
                         print(
                             f"ทำรายการที่ {index} สำเร็จ และบันทึกลง Log แล้ว "
@@ -911,6 +914,7 @@ def main():
                         traceback.print_exc()
                         if not recover_ui(main_window):
                             print("[FATAL] หยุดสคริปต์เพราะกู้คืนหน้าจอไม่สำเร็จ")
+                            write_output_csv(rows, output_fieldnames)
                             return
 
                     except Exception as error:
@@ -920,7 +924,12 @@ def main():
                         traceback.print_exc()
                         if not recover_ui(main_window):
                             print("[FATAL] หยุดสคริปต์เพราะกู้คืนหน้าจอไม่สำเร็จ")
+                            write_output_csv(rows, output_fieldnames)
                             return
+
+                # แก้: เขียน CSV output ครั้งเดียวตอนจบ loop ทั้งหมด (ย้ายมาจาก
+                # ในลูปตามที่ขอ เพื่อ performance -- ไม่ต้องเขียนไฟล์ซ้ำทุกแถว)
+                write_output_csv(rows, output_fieldnames)
 
     except FileNotFoundError:
         print(f"ไม่พบไฟล์ {CSV_FILENAME} กรุณาตรวจสอบว่าไฟล์อยู่ในโฟลเดอร์เดียวกับสคริปต์")
