@@ -44,9 +44,9 @@ SUCCESS_TITLE_RE = r".*(สำเร็จ|เสร็จสิ้น|พิม
 # แก้: เจอค่านี้ถูกแก้เป็น 3 โดยไม่ได้ตั้งใจ (ไม่ใช่การแก้ที่ผมทำเอง คล้ายเคส
 # ADDRESS_SEARCH_FALLBACK_CANDIDATES=88 ที่เจอก่อนหน้านี้) อันตรายมากเพราะ
 # เป็นตัวตัดสินว่ารายการนี้ "สำเร็จจริง" ก่อนบันทึก log -- ถ้ารอไม่พอ จะถือว่า
-# ไม่สำเร็จทั้งที่ปริ้นออกมาแล้วจริง แล้วพิมพ์ซ้ำอีกใบตอนรันใหม่ กลับเป็น 10
+# ไม่สำเร็จทั้งที่ปริ้นออกมาแล้วจริง แล้วพิมพ์ซ้ำอีกใบตอนรันใหม่ กลับเป็น 4
 # เหมือนเดิม (ค่านี้ไม่ควรลดเพื่อประหยัดเวลา เสี่ยงเกินไป)
-SUCCESS_WAIT_TIMEOUT = 5
+SUCCESS_WAIT_TIMEOUT = 4
 
 # เลขพัสดุ (tracking number) ของไปรษณีย์ไทย รูปแบบมาตรฐาน: ตัวอักษร 2 ตัว +
 # ตัวเลข 9 หลัก + ตัวอักษร 2 ตัว (เช่น JH000205755TH) แมตช์ด้วย pattern นี้
@@ -274,23 +274,48 @@ def handle_dangerous_goods_question(window, timeout=5):
         click_next(window)
 
 
-def handle_postcode_overlap_alert(window, timeout=2):
+def handle_postcode_overlap_alert(window, timeout=3):
     """
-    หลังกรอกรหัสไปรษณีย์ ถ้ารหัสที่พิมพ์ไม่ตรงกับรหัสที่ระบบแนะนำ จะมี Alert
-    แทรกขึ้นมาถาม "คุณต้องการใช้รหัสไปรษณีย์ที่แนะนำหรือไม่?"
+    หลังกรอกรหัสไปรษณีย์ที่หน้า "Destination" (EG.Shipping.Destination,
+    ช่อง auto_id="PostCodeDestination") บางครั้งรหัสที่พิมพ์ครอบคลุมหลาย
+    พื้นที่ จะมี Alert แทรกขึ้นมา
 
     แก้: ยืนยันจาก controls dump จริงของ Alert นี้แล้ว 100% (ผู้ใช้ส่งมาตอน
-    Alert กำลังโชว์อยู่จริง) auto_id ที่ถูกต้องคือ:
-    title="Alert", auto_id="EG.CustomerCapture.PostalCodeAlert" มี 2 ปุ่ม:
+    Alert กำลังโชว์อยู่จริง) นี่คือ Alert คนละตัวกับ
+    EG.CustomerCapture.PostalCodeAlert (ดู
+    handle_customer_capture_postal_code_alert ด้านล่าง) -- ตัวนี้คือ
+    title="Alert", auto_id="THP.Shipping.PostcodeOverlap.AlertView" มี 2 ปุ่ม:
+    - auto_id="ChangeCommand" ("เปลี่ยน", hotkey ESC)
+    - auto_id="ProceedCommand" ("ดำเนินการ", hotkey ENTER)
+      = ไปต่อโดยไม่ต้องเลือกพื้นที่เจาะจง (ค่าที่ใช้งานได้จริงมาตลอด)
+
+    ก่อนหน้านี้เคยเข้าใจผิดคิดว่า auto_id="ProceedCommand" ไม่มีอยู่จริง
+    (ไปเจอ dump ของ Alert อีกตัวที่หน้าอื่นแทน) เลยเปลี่ยนไปเช็คผิดตัว --
+    กลับมาใช้ "ProceedCommand" ของ Alert นี้ตามเดิมแล้ว
+    """
+    if is_control_visible(
+        window, timeout=timeout, auto_id="ProceedCommand", control_type="Button"
+    ):
+        print("[DEBUG] พบ Alert รหัสไปรษณีย์ครอบคลุมหลายพื้นที่ -> กด 'ดำเนินการ'")
+        wait_and_click(window, auto_id="ProceedCommand", control_type="Button")
+        time.sleep(0.3)
+
+
+def handle_customer_capture_postal_code_alert(window, timeout=1.5):
+    """
+    Alert คนละตัวกับ handle_postcode_overlap_alert() ด้านบน -- ตัวนี้โผล่
+    ขึ้นมาที่หน้า "ข้อมูลผู้ส่ง/ผู้รับ" (EG.CustomerCapture.CustomerCaptureView)
+    ถ้ารหัสไปรษณีย์ในหน้านั้นไม่ตรงกับรหัสที่ระบบแนะนำ ยืนยันจาก controls
+    dump จริงแล้ว: title="Alert", auto_id="EG.CustomerCapture.PostalCodeAlert"
+    มี 2 ปุ่ม:
     - auto_id="PostalCodeAlertAcceptCommand" ("ตกลง", hotkey ENTER)
       = เปลี่ยนไปใช้รหัสที่ระบบแนะนำ (ไม่ต้องการ)
     - auto_id="PostalCodeAlertDeclineCommand" ("ยกเลิก", hotkey ESC)
       = คงรหัสไปรษณีย์เดิมที่พิมพ์เอง (ต้องการอันนี้)
 
-    ของเดิมเช็คหา auto_id="ProceedCommand"/"ChangeCommand" ซึ่งไม่มีอยู่จริง
-    เลย (เดาผิดมาตลอด หลายรอบ) ทำให้หา Alert นี้ไม่เจอทุกครั้ง สคริปต์เลย
-    รอจน timeout เต็มๆ แล้วปล่อยผ่านไปทั้งที่ Alert ยังค้างอยู่จริงบนจอ ทำให้
-    ขั้นตอนถัดไปพังและช้ามาก -- เปลี่ยนมาใช้ auto_id ที่ถูกต้องแล้ว
+    เรียกใช้ตรงช่วง "3x click_next" ก่อนเข้าหน้าค้นหาที่อยู่ เพราะ Alert นี้
+    คือสาเหตุที่แท้จริงของหน้า "ข้อมูลผู้ส่ง" ที่เคยค้าง (กด Submit ไม่ติด
+    เพราะโดน Alert บังอยู่) -- เช็คแบบเบาๆ ไม่เจอก็ข้ามไปเงียบๆ ไม่ throw
     """
     if is_control_visible(
         window,
@@ -298,13 +323,13 @@ def handle_postcode_overlap_alert(window, timeout=2):
         auto_id="PostalCodeAlertDeclineCommand",
         control_type="Button",
     ):
-        print("[DEBUG] พบ Alert รหัสไปรษณีย์ -> กด 'ยกเลิก' (คงรหัสเดิมที่พิมพ์เอง)")
+        print("[DEBUG] พบ Alert รหัสไปรษณีย์ (หน้าข้อมูลผู้ส่ง) -> กด 'ยกเลิก' (คงรหัสเดิม)")
         wait_and_click(
             window,
             auto_id="PostalCodeAlertDeclineCommand",
             control_type="Button",
         )
-        time.sleep(0.3)
+        time.sleep(0.1)
 
 
 def click_next(window):
@@ -319,7 +344,7 @@ def click_next(window):
             auto_id=SUBMIT_AUTO_ID,
             control_type="Button",
             wait_states="exists visible",
-            timeout=5,
+            timeout=3,
         )
     except Exception:
         print("[DEBUG] ไม่พบปุ่มด้วย auto_id, ลอง fallback เป็น title_re='ถัดไป'")
@@ -790,16 +815,20 @@ def main():
                             control_type="Button",
                             wait_states="exists visible",
                         )
-                        time.sleep(0.5)  # แก้: ลดจาก 1 วิ (ลด latency)
+                        time.sleep(0.1)  # แก้: ลดจาก 1 วิ (ลด latency)
 
                         # แก้: ช่วงนี้มีโอกาสเจอหน้า "ข้อมูลผู้ส่ง" (customer
                         # ที่มาใช้บริการ) แทรกมา บางครั้งกดถัดไปแล้วหน้าไม่
-                        # เปลี่ยนจริง (ผู้ใช้สังเกตเจอ) แล้วสคริปต์เดินหน้าไป
-                        # กรอกที่อยู่บนหน้าเดิมที่ค้างอยู่ -> error เปลี่ยนมาใช้
-                        # click_next_verified() แทน (เช็คว่าหน้าเปลี่ยนจริง
-                        # ก่อนไปต่อ ไม่กรอกอะไรในหน้านี้ ข้ามได้เลยตามที่ตกลง)
+                        # เปลี่ยนจริง (ผู้ใช้สังเกตเจอ) -- ตอนนี้รู้สาเหตุจริง
+                        # แล้ว: หน้านั้นมี Alert รหัสไปรษณีย์
+                        # (EG.CustomerCapture.PostalCodeAlert) บังปุ่ม Submit
+                        # อยู่ ทำให้กดไม่ติด เช็ค/ปิด Alert นี้ก่อนทุกรอบ แล้ว
+                        # ค่อยใช้ click_next_verified() (เช็คว่าหน้าเปลี่ยน
+                        # จริงก่อนไปต่อ ไม่กรอกอะไรในหน้านี้ ข้ามได้เลยตามที่
+                        # ตกลง)
                         for round_number in range(1, 4):
                             print(f"[DEBUG] กดถัดไป รอบที่ {round_number}/3")
+                            handle_customer_capture_postal_code_alert(main_window)
                             click_next_verified(main_window)
 
                         # ค้นหาและเลือกที่อยู่ (แก้: ใช้ address_search จาก CSV
@@ -846,7 +875,7 @@ def main():
 
                         # สิ้นสุดกระบวนการ
                         wait_and_click(main_window, title_re=r"^ไม่$")
-                        time.sleep(0.5)
+                        time.sleep(0.1)
 
                         # แก้: ตรวจสอบหน้า success จริงก่อนบันทึก log
                         if not wait_for_success(main_window):
