@@ -25,7 +25,7 @@ DEFAULT_WEIGHT = "500"
 # ADDRESS_SEARCH_FALLBACK_CANDIDATES ของจริง -- เมื่อก่อนตั้งเป็น "11" ทำให้
 # " " ที่เพิ่งเพิ่มเข้าไปในลิสต์ fallback ไม่เคยถูกลองเป็นอันดับแรกจริงๆ เลย
 # (เพราะ primary_search_term ต่อไว้หน้าสุดเสมอใน search_and_select_address)
-DEFAULT_ADDRESS_SEARCH=11
+DEFAULT_ADDRESS_SEARCH = "11"
 # แก้: เช็คแล้วพบว่า data.csv มีรหัสไปรษณีย์ต่างกันมากกว่า 75 รหัส (ไม่ได้
 # ซ้ำกันหมดแบบที่ทดสอบตอนแรก) เลขที่ "88"/"11" ฯลฯ เจาะจงกับซอยประชาอุทิศ 88
 # (เขต 10140) เท่านั้น รหัสไปรษณีย์อื่นแทบไม่มีทางแมตช์เลย -- เพิ่ม " "
@@ -46,7 +46,7 @@ SUCCESS_TITLE_RE = r".*(สำเร็จ|เสร็จสิ้น|พิม
 # เป็นตัวตัดสินว่ารายการนี้ "สำเร็จจริง" ก่อนบันทึก log -- ถ้ารอไม่พอ จะถือว่า
 # ไม่สำเร็จทั้งที่ปริ้นออกมาแล้วจริง แล้วพิมพ์ซ้ำอีกใบตอนรันใหม่ กลับเป็น 10
 # เหมือนเดิม (ค่านี้ไม่ควรลดเพื่อประหยัดเวลา เสี่ยงเกินไป)
-SUCCESS_WAIT_TIMEOUT = 2
+SUCCESS_WAIT_TIMEOUT = 5
 
 # เลขพัสดุ (tracking number) ของไปรษณีย์ไทย รูปแบบมาตรฐาน: ตัวอักษร 2 ตัว +
 # ตัวเลข 9 หลัก + ตัวอักษร 2 ตัว (เช่น JH000205755TH) แมตช์ด้วย pattern นี้
@@ -274,20 +274,37 @@ def handle_dangerous_goods_question(window, timeout=5):
         click_next(window)
 
 
-def handle_postcode_overlap_alert(window, timeout=5):
+def handle_postcode_overlap_alert(window, timeout=2):
     """
-    หลังกรอกรหัสไปรษณีย์ บางครั้ง (ไม่เสมอไป) จะมี Alert แทรกขึ้นมาว่ารหัส
-    ไปรษณีย์นี้ครอบคลุมหลายพื้นที่ (auto_id="THP.Shipping.PostcodeOverlap.
-    AlertView") มี 2 ปุ่ม: "เปลี่ยน" (ChangeCommand) กับ "ดำเนินการ"
-    (ProceedCommand) -- กด "ดำเนินการ" (Proceed) เป็น default เพื่อไปต่อโดย
-    ไม่ต้องเลือกพื้นที่เจาะจง เช็คแบบเบาๆ ไม่เจอก็ข้ามไปเงียบๆ ไม่ throw
+    หลังกรอกรหัสไปรษณีย์ ถ้ารหัสที่พิมพ์ไม่ตรงกับรหัสที่ระบบแนะนำ จะมี Alert
+    แทรกขึ้นมาถาม "คุณต้องการใช้รหัสไปรษณีย์ที่แนะนำหรือไม่?"
+
+    แก้: ยืนยันจาก controls dump จริงของ Alert นี้แล้ว 100% (ผู้ใช้ส่งมาตอน
+    Alert กำลังโชว์อยู่จริง) auto_id ที่ถูกต้องคือ:
+    title="Alert", auto_id="EG.CustomerCapture.PostalCodeAlert" มี 2 ปุ่ม:
+    - auto_id="PostalCodeAlertAcceptCommand" ("ตกลง", hotkey ENTER)
+      = เปลี่ยนไปใช้รหัสที่ระบบแนะนำ (ไม่ต้องการ)
+    - auto_id="PostalCodeAlertDeclineCommand" ("ยกเลิก", hotkey ESC)
+      = คงรหัสไปรษณีย์เดิมที่พิมพ์เอง (ต้องการอันนี้)
+
+    ของเดิมเช็คหา auto_id="ProceedCommand"/"ChangeCommand" ซึ่งไม่มีอยู่จริง
+    เลย (เดาผิดมาตลอด หลายรอบ) ทำให้หา Alert นี้ไม่เจอทุกครั้ง สคริปต์เลย
+    รอจน timeout เต็มๆ แล้วปล่อยผ่านไปทั้งที่ Alert ยังค้างอยู่จริงบนจอ ทำให้
+    ขั้นตอนถัดไปพังและช้ามาก -- เปลี่ยนมาใช้ auto_id ที่ถูกต้องแล้ว
     """
     if is_control_visible(
-        window, timeout=timeout, auto_id="ProceedCommand", control_type="Button"
+        window,
+        timeout=timeout,
+        auto_id="PostalCodeAlertDeclineCommand",
+        control_type="Button",
     ):
-        print("[DEBUG] พบ Alert รหัสไปรษณีย์ครอบคลุมหลายพื้นที่ -> กด 'ดำเนินการ'")
-        wait_and_click(window, auto_id="ProceedCommand", control_type="Button")
-        time.sleep(0.1)
+        print("[DEBUG] พบ Alert รหัสไปรษณีย์ -> กด 'ยกเลิก' (คงรหัสเดิมที่พิมพ์เอง)")
+        wait_and_click(
+            window,
+            auto_id="PostalCodeAlertDeclineCommand",
+            control_type="Button",
+        )
+        time.sleep(0.3)
 
 
 def click_next(window):
@@ -309,6 +326,57 @@ def click_next(window):
         wait_and_click(window, title_re=r"^ถัดไป$")
 
     time.sleep(0.1)  # แก้: ลดจาก 1 วิ (ลด latency, click_next โดนเรียกบ่อยสุด)
+
+
+def get_main_pane_auto_id(window):
+    """
+    แก้: ฟังก์ชันนี้เคยหายไปด้วยเช่นกัน คืน auto_id ของ pane เนื้อหาหลัก
+    (title="Main") ของหน้าปัจจุบัน เช่น "EG.Shipping.MailPieceCategory",
+    "EG.CustomerCapture.CustomerCaptureView" -- ยืนยันจาก controls dump จริง
+    แล้วว่า title="Main" คงที่ทุกหน้า มีแค่ auto_id ที่เปลี่ยนไปตามหน้า ใช้เป็น
+    "ลายนิ้วมือ" เช็คว่าหน้าเปลี่ยนจริงหรือไม่หลังกดถัดไป คืน None ถ้าหาไม่เจอ
+    """
+    try:
+        main_pane = window.child_window(title="Main", control_type="Custom")
+        return main_pane.wrapper_object().element_info.automation_id
+    except Exception:
+        return None
+
+
+def click_next_verified(window, max_attempts=3, settle_time=0.6):
+    """
+    แก้: ฟังก์ชันนี้เคยหายไปด้วยเช่นกัน -- ผู้ใช้สังเกตเจอว่าบางครั้งกด
+    "ถัดไป" แล้วปุ่ม "ไม่ติด" จริง (หน้าไม่เปลี่ยน) โดยเฉพาะหน้าข้อมูลผู้ส่ง
+    (customer) ที่บางครั้งค้างนิ่ง แต่ click_next() เดิมไม่เคยเช็คว่าหน้า
+    เปลี่ยนจริงหรือเปล่า เลยเดินหน้าไปเรียกฟังก์ชันถัดไป (เช่น กรอกที่อยู่)
+    ทั้งที่ยังอยู่หน้าเดิม -> เกิด error ตามมา
+
+    เช็ค auto_id ของ pane "Main" ก่อน/หลังกด ถ้ายังไม่เปลี่ยนให้ลองกดซ้ำ
+    (สูงสุด max_attempts ครั้ง) ถ้าลองครบแล้วยังไม่เปลี่ยน ให้แค่เตือนแล้ว
+    ปล่อยผ่านไปเลย (ไม่ throw หยุดสคริปต์ -- ตามที่ตกลงกันไว้ว่าข้ามได้ ไม่ต้อง
+    กรอกอะไรในหน้านี้)
+    """
+    page_before = get_main_pane_auto_id(window)
+
+    for attempt in range(1, max_attempts + 1):
+        click_next(window)
+        time.sleep(settle_time)
+        page_after = get_main_pane_auto_id(window)
+
+        if page_after != page_before or page_after is None:
+            return True
+
+        print(
+            f"[WARNING] กดถัดไปแล้วหน้ายังไม่เปลี่ยน (auto_id เดิม={page_before!r}) "
+            f"ลองกดซ้ำ ({attempt}/{max_attempts})"
+        )
+
+    print(
+        "[WARNING] กดถัดไปครบ "
+        f"{max_attempts} ครั้งแล้วหน้ายังไม่เปลี่ยน -- ข้ามไปเลยตามที่ตกลงกันไว้ "
+        "(ไม่ให้สคริปต์ค้าง)"
+    )
+    return False
 
 
 def report_validation_errors(window, timeout=1):
@@ -423,6 +491,71 @@ def is_control_visible(window, timeout=2, **criteria):
         return False
 
 
+def write_output_csv(rows, fieldnames, filename=OUTPUT_CSV_FILENAME):
+    """
+    แก้: ฟังก์ชันนี้เคยหายไปจากไฟล์ (โดนลบพร้อมกับ 'โค้ดที่ไม่จำเป็น' รอบก่อน)
+    ทั้งที่ยังถูกเรียกใช้อยู่จริงใน main() -- เขียนไฟล์ CSV output ใหม่ทั้งไฟล์
+    (มีคอลัมน์ TrackingNo เติมกลับเข้าไป) ทุกครั้งที่ทำรายการสำเร็จ เปิดด้วย
+    Excel ดูได้เลยระหว่างที่สคริปต์ยังรันอยู่
+    """
+    try:
+        with open(filename, mode="w", encoding="utf-8-sig", newline="") as output_file:
+            writer = csv.DictWriter(output_file, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+    except Exception as error:
+        print(f"[WARNING] เขียนไฟล์ {filename} ไม่สำเร็จ: {error}")
+
+
+def wait_for_success(window, timeout=SUCCESS_WAIT_TIMEOUT):
+    """
+    แก้: ฟังก์ชันนี้เคยหายไปจากไฟล์เหมือนกัน (แต่ยังถูกเรียกใน main() อยู่ ->
+    จะ crash ด้วย NameError ทันทีที่รายการแรกทำถึงจุดนี้) ตรวจสอบว่าถึงหน้า/
+    ข้อความยืนยันความสำเร็จจริงหรือไม่ ก่อนจะถือว่ารายการนี้ทำสำเร็จ ห้ามลด
+    timeout นี้ต่ำเกินไป (ดูคำเตือนตรง SUCCESS_WAIT_TIMEOUT ด้านบนไฟล์)
+    """
+    print("[DEBUG] กำลังตรวจสอบหน้าจอยืนยันความสำเร็จ...")
+    if is_control_visible(window, timeout=timeout, title_re=SUCCESS_TITLE_RE):
+        print("[DEBUG] พบสัญญาณความสำเร็จ")
+        return True
+
+    print("[WARNING] ไม่พบสัญญาณความสำเร็จภายในเวลาที่กำหนด")
+    dump_controls_on_failure(window, "success_screen")
+    return False
+
+
+def capture_tracking_number(window, timeout=5):
+    """
+    แก้: ฟังก์ชันนี้เคยหายไปจากไฟล์เช่นกัน อ่านเลขพัสดุ (tracking number)
+    จาก auto_id="SummaryView" -- ยืนยันจาก controls dump จริงแล้วว่าเลขพัสดุ
+    (เช่น "JH000236315TH") ปรากฏเป็น Static text อยู่ในนั้น ใช้
+    TRACKING_NUMBER_RE แมตช์แทนการหา label ภาษาไทย (มักเพี้ยนผ่าน UI
+    Automation) คืน None ถ้าหาไม่เจอ (ไม่ throw หยุดสคริปต์)
+    """
+    try:
+        summary_view = window.child_window(
+            auto_id="SummaryView", control_type="Custom"
+        )
+        summary_view.wait("exists visible", timeout=timeout)
+        wrapper = summary_view.wrapper_object()
+
+        matches = []
+        for item in wrapper.descendants():
+            text = item.window_text()
+            if text and TRACKING_NUMBER_RE.match(text.strip()):
+                matches.append(text.strip())
+
+        if matches:
+            tracking_number = matches[-1]
+            print(f"[DEBUG] พบเลขพัสดุ: {tracking_number}")
+            return tracking_number
+
+        print("[WARNING] หาเลขพัสดุใน SummaryView ไม่เจอ")
+        return None
+
+    except Exception as error:
+        print(f"[WARNING] อ่านเลขพัสดุไม่สำเร็จ: {error}")
+        return None
 
 
 def recover_ui(main_window, max_attempts=5):
@@ -659,9 +792,15 @@ def main():
                         )
                         time.sleep(0.5)  # แก้: ลดจาก 1 วิ (ลด latency)
 
+                        # แก้: ช่วงนี้มีโอกาสเจอหน้า "ข้อมูลผู้ส่ง" (customer
+                        # ที่มาใช้บริการ) แทรกมา บางครั้งกดถัดไปแล้วหน้าไม่
+                        # เปลี่ยนจริง (ผู้ใช้สังเกตเจอ) แล้วสคริปต์เดินหน้าไป
+                        # กรอกที่อยู่บนหน้าเดิมที่ค้างอยู่ -> error เปลี่ยนมาใช้
+                        # click_next_verified() แทน (เช็คว่าหน้าเปลี่ยนจริง
+                        # ก่อนไปต่อ ไม่กรอกอะไรในหน้านี้ ข้ามได้เลยตามที่ตกลง)
                         for round_number in range(1, 4):
                             print(f"[DEBUG] กดถัดไป รอบที่ {round_number}/3")
-                            click_next(main_window)
+                            click_next_verified(main_window)
 
                         # ค้นหาและเลือกที่อยู่ (แก้: ใช้ address_search จาก CSV
                         # เป็นคำค้นหาแรก ถ้าไม่เจอผลลัพธ์ จะไล่ลองคำถัดไปใน
@@ -672,23 +811,29 @@ def main():
                         click_next(main_window)
 
                         # ข้อมูลผู้รับ
+                        # แก้: เจอจาก controls dump จริงของหน้านี้
+                        # (EG.CustomerCapture.CustomerCaptureView) ว่าช่อง Edit
+                        # แต่ละช่องมี auto_id ภาษาอังกฤษตรงตัวอยู่แล้ว
+                        # (CustomerFirstName, CustomerLastName, PhoneNumber)
+                        # ไม่ต้องพึ่ง title_re ภาษาไทยที่เพี้ยน (mojibake) อีก
+                        # ต่อไป -- ยิงตรง auto_id เลย แม่นกว่าและเร็วกว่า
                         fill_edit(
                             main_window,
                             first_name,
-                            title_re=r"^ชื่อ$",
-                            auto_id="LabelForTextBox",
+                            auto_id="CustomerFirstName",
+                            control_type="Edit",
                         )
                         fill_edit(
                             main_window,
                             last_name,
-                            title_re=r"^นามสกุล$",
-                            auto_id="LabelForTextBox",
+                            auto_id="CustomerLastName",
+                            control_type="Edit",
                         )
                         fill_edit(
                             main_window,
                             phone_number,  # แก้: ใช้เบอร์จาก CSV
-                            title_re=r".*หมายเลขโทรศัพท์.*",
-                            auto_id="LabelForTextBox",
+                            auto_id="PhoneNumber",
+                            control_type="Edit",
                         )
 
                         # แก้: หน้า "ข้อมูลผู้รับ" (EG.CustomerCapture.
@@ -710,17 +855,33 @@ def main():
                                 "จะไม่บันทึกรายการนี้ลง log"
                             )
 
+                        # แก้: บล็อกนี้ทั้งหมด (จับเลขพัสดุ, บันทึก log,
+                        # เขียน CSV output) เคยหายไปจากไฟล์ (โดนลบพร้อมกับ
+                        # "โค้ดที่ไม่จำเป็น" รอบก่อน) เหลือแค่คอมเมนต์ไว้เฉยๆ
+                        # ทำให้ completed_names ไม่เคยถูกอัปเดตเลย -- อันตราย
+                        # มาก เพราะถ้ารันสคริปต์ใหม่ จะไม่รู้ว่ารายการไหนทำไป
+                        # แล้วบ้าง เสี่ยงพิมพ์ใบซ้ำทุกใบตั้งแต่ต้น กู้คืนกลับมา
+
                         # แก้: อ่านเลขพัสดุ (tracking number) มาบันทึกไว้ด้วย
                         # เผื่ออ่านไม่ได้ ก็ยังถือว่ารายการนี้สำเร็จ (บันทึก
                         # ช่องเลขพัสดุว่างไว้ก่อน)
+                        tracking_number = capture_tracking_number(main_window)
 
+                        log_file.write(
+                            f"{unique_identifier}|{tracking_number or ''}\n"
+                        )
+                        log_file.flush()
+                        completed_names.add(unique_identifier)
 
                         # แก้: เติมเลขพัสดุกลับเข้าแถวนี้ แล้วเขียนไฟล์ CSV
                         # output ใหม่ทั้งไฟล์ (เปิดด้วย Excel ดูได้เลย)
+                        row["TrackingNo"] = tracking_number or row.get("TrackingNo", "")
+                        write_output_csv(rows, output_fieldnames)
 
-
-                        # แก้: push ไฟล์ output ขึ้น git เป็นระยะ ดึงจาก
-                        # เครื่องอื่นได้ผ่าน git pull (throttle อยู่แล้วในตัว)
+                        print(
+                            f"ทำรายการที่ {index} สำเร็จ และบันทึกลง Log แล้ว "
+                            f"(เลขพัสดุ: {tracking_number or 'ไม่พบ'})"
+                        )
 
                     except PywinautoTimeoutError:
                         print(f"Timeout ที่รายการ {index}: {first_name} {last_name}")
