@@ -828,7 +828,7 @@ def main():
                             auto_id=SHIPPING_SERVICE_AUTO_ID,
                             control_type="Button",
                             wait_states="exists visible",
-                            timeout=8,
+                            timeout=10,
                         )
 
                         # แก้: ช่วงนี้มีโอกาสเจอหน้า "ข้อมูลผู้ส่ง" (customer
