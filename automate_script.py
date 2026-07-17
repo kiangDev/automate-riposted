@@ -274,11 +274,12 @@ def handle_dangerous_goods_question(window, timeout=5):
         click_next(window)
 
 
-def handle_postcode_overlap_alert(window, timeout=3):
+def handle_postcode_overlap_alert(window, timeout=5):
     """
     หลังกรอกรหัสไปรษณีย์ที่หน้า "Destination" (EG.Shipping.Destination,
     ช่อง auto_id="PostCodeDestination") บางครั้งรหัสที่พิมพ์ครอบคลุมหลาย
-    พื้นที่ จะมี Alert แทรกขึ้นมา
+    พื้นที่ จะมี Alert แทรกขึ้นมา (ระบบเช็ครหัสไปรษณีย์กับเซิร์ฟเวอร์ ผู้ใช้
+    เคยยืนยันแล้วว่าบางครั้งใช้เวลานานเกือบเต็ม timeout จริง)
 
     แก้: ยืนยันจาก controls dump จริงของ Alert นี้แล้ว 100% (ผู้ใช้ส่งมาตอน
     Alert กำลังโชว์อยู่จริง) นี่คือ Alert คนละตัวกับ
@@ -292,6 +293,13 @@ def handle_postcode_overlap_alert(window, timeout=3):
     ก่อนหน้านี้เคยเข้าใจผิดคิดว่า auto_id="ProceedCommand" ไม่มีอยู่จริง
     (ไปเจอ dump ของ Alert อีกตัวที่หน้าอื่นแทน) เลยเปลี่ยนไปเช็คผิดตัว --
     กลับมาใช้ "ProceedCommand" ของ Alert นี้ตามเดิมแล้ว
+
+    แก้: คืน timeout จาก 3 กลับเป็น 5 -- ตอน 3 วิ ทำให้พลาด Alert ที่มาช้า
+    (เซิร์ฟเวอร์ตอบช้ากว่า 3 วิ) แล้วสคริปต์ไปพยายามกดปุ่มเลือกบริการต่อทันที
+    ทั้งที่ Alert ยังบังหน้าจออยู่จริง กดไม่ติด -> error -> recover_ui() กด
+    ESC ถอยกลับไปหน้าแรก (คือปัญหาที่เจอ "ยังไม่ทันกดเลือกบริการก็ถอยกลับ")
+    การพลาดจุดนี้แล้ว fail ทั้งแถวช้ากว่าแค่รอเพิ่มอีก 2 วิเยอะมาก จึงคุ้มกว่า
+    ที่จะรอให้นานพอจริงๆ
     """
     if is_control_visible(
         window, timeout=timeout, auto_id="ProceedCommand", control_type="Button"
