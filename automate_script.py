@@ -740,6 +740,8 @@ def main():
                         continue
 
                     print(f"--- กำลังทำรายการที่ {index}: {first_name} {last_name} ---")
+                    row_start_time = time.time()  # แก้: จับเวลาต่อแถว จะได้เห็นตัวเลขจริง
+                    # แทนการเดา ว่าตอนนี้เฉลี่ยกี่วิ/ใบ ก่อนจะไปตัดอะไรเพิ่ม
 
                     try:
                         # แก้: ลด "enabled" ออก เหลือแค่ "exists visible"
@@ -904,9 +906,11 @@ def main():
                         # ตรงนี้ (ไม่มี I/O เพิ่ม แทบไม่กินเวลาเลย)
                         row["TrackingNo"] = tracking_number or row.get("TrackingNo", "")
 
+                        row_elapsed = time.time() - row_start_time
                         print(
                             f"ทำรายการที่ {index} สำเร็จ และบันทึกลง Log แล้ว "
-                            f"(เลขพัสดุ: {tracking_number or 'ไม่พบ'})"
+                            f"(เลขพัสดุ: {tracking_number or 'ไม่พบ'}) "
+                            f"[ใช้เวลา {row_elapsed:.1f} วิ]"
                         )
 
                     except PywinautoTimeoutError:
