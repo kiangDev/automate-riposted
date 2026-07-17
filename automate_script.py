@@ -342,9 +342,17 @@ def handle_customer_capture_postal_code_alert(window, timeout=1.5):
 
 def click_next(window):
     """
-    กดปุ่มถัดไป/ยืนยัน (ปุ่มหลักของหน้า)
-    ลองใช้ auto_id="LocalCommand_Submit" ก่อน (เชื่อถือได้กว่า title ภาษาไทย
-    ที่เพี้ยนจาก UI Automation) ถ้าไม่เจอค่อย fallback ไปหา title "ถัดไป"
+    กดปุ่มถัดไป/ยืนยัน (ปุ่มหลักของหน้า) -- ฟังก์ชันนี้ถูกเรียกถี่ที่สุดใน
+    flow ทั้งหมด (ทุกครั้งที่เปลี่ยนหน้า) ลองใช้ auto_id="LocalCommand_Submit"
+    ก่อน (เชื่อถือได้กว่า title ภาษาไทยที่เพี้ยนจาก UI Automation) ถ้าไม่เจอ
+    ค่อย fallback ไปหา title "ถัดไป"
+
+    แก้: คืน timeout จาก 3 กลับเป็น 5 -- ด้วยเหตุผลเดียวกับ
+    handle_postcode_overlap_alert() คือถ้าปุ่มยังไม่พร้อมจริง (หน้าเพิ่ง
+    เปลี่ยน/รอ validation จากเซิร์ฟเวอร์) แล้ว timeout สั้นเกินไป จะโยน
+    exception ทันที -> recover_ui() กด ESC ถอยกลับทั้งแถว ซึ่งช้ากว่าแค่รอ
+    เพิ่มอีก 2 วิมาก เพราะฟังก์ชันนี้โดนเรียกเกือบทุกขั้นตอน จุดนี้จึงมีโอกาส
+    เกิด false-fail บ่อยที่สุดในทั้งไฟล์
     """
     try:
         wait_and_click(
@@ -352,7 +360,7 @@ def click_next(window):
             auto_id=SUBMIT_AUTO_ID,
             control_type="Button",
             wait_states="exists visible",
-            timeout=3,
+            timeout=5,
         )
     except Exception:
         print("[DEBUG] ไม่พบปุ่มด้วย auto_id, ลอง fallback เป็น title_re='ถัดไป'")
