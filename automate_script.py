@@ -140,7 +140,7 @@ def dump_controls_on_failure(window, tag):
         print(f"[WARNING] dump control tree ไม่สำเร็จ: {dump_error}")
 
 
-def wait_and_click(window, timeout=15, wait_states="exists visible enabled", **criteria):
+def wait_and_click(window, timeout=5, wait_states="exists visible enabled", **criteria):
     print(f"[DEBUG] กำลังค้นหา control: {criteria}")
     try:
         control = window.child_window(**criteria)
@@ -198,7 +198,7 @@ def resolve_edit_wrapper(wrapper, timeout=15):
     )
 
 
-def fill_edit(window, value, timeout=15, force_type_keys=False, **criteria):
+def fill_edit(window, value, timeout=5, force_type_keys=False, **criteria):
     """
     รอช่องกรอก ล้างข้อมูลเดิม แล้วกรอกค่าใหม่
 
@@ -270,7 +270,7 @@ def handle_dangerous_goods_question(window, timeout=5):
     ):
         print("[DEBUG] พบหน้าคำถามสินค้าอันตราย -> กด 'Confirmed' (ยืนยันว่าไม่มีสินค้าอันตราย)")
         wait_and_click(window, auto_id=DANGEROUS_GOODS_ANSWER_AUTO_ID, control_type="Button")
-        time.sleep(0.2)  # แก้: ลดจาก 1 วิ (ลด latency)
+          # แก้: ลดจาก 1 วิ (ลด latency)
         click_next(window)
 
 
@@ -298,7 +298,7 @@ def handle_postcode_overlap_alert(window, timeout=3):
     ):
         print("[DEBUG] พบ Alert รหัสไปรษณีย์ครอบคลุมหลายพื้นที่ -> กด 'ดำเนินการ'")
         wait_and_click(window, auto_id="ProceedCommand", control_type="Button")
-        time.sleep(0.3)
+        
 
 
 def handle_customer_capture_postal_code_alert(window, timeout=1.5):
@@ -329,7 +329,7 @@ def handle_customer_capture_postal_code_alert(window, timeout=1.5):
             auto_id="PostalCodeAlertDeclineCommand",
             control_type="Button",
         )
-        time.sleep(0.1)
+        
 
 
 def click_next(window):
@@ -350,7 +350,7 @@ def click_next(window):
         print("[DEBUG] ไม่พบปุ่มด้วย auto_id, ลอง fallback เป็น title_re='ถัดไป'")
         wait_and_click(window, title_re=r"^ถัดไป$")
 
-    time.sleep(0.1)  # แก้: ลดจาก 1 วิ (ลด latency, click_next โดนเรียกบ่อยสุด)
+    
 
 
 def get_main_pane_auto_id(window):
@@ -449,12 +449,12 @@ def search_and_select_address(window, primary_search_term, timeout_per_try=7):
                 auto_id="LabelForTextBox",
                 force_type_keys=True,
             )
-            time.sleep(0.1)
+            
 
             # แก้: พิมพ์คำค้นหาอย่างเดียวไม่พอ ต้องกด "ถัดไป"/submit ก่อน
             # หน้าผลลัพธ์ถึงจะขึ้น (ผู้ใช้ทดสอบด้วยมือแล้วยืนยันตรงนี้)
             click_next(window)
-            time.sleep(0.1)
+            
 
             address_result_group = window.child_window(
                 auto_id="AddressResult", control_type="Group"
@@ -466,7 +466,7 @@ def search_and_select_address(window, primary_search_term, timeout_per_try=7):
             )
             first_address_result.wait("exists visible", timeout=timeout_per_try)
             first_address_result.wrapper_object().click_input()
-            time.sleep(0.1)
+            
 
             print(f"[DEBUG] ค้นหาที่อยู่ด้วยคำว่า {term!r} เจอผลลัพธ์ -> เลือกตัวแรกแล้ว")
             return True
@@ -602,7 +602,7 @@ def recover_ui(main_window, max_attempts=5):
         )
         home_button.wait("exists visible", timeout=2)
         home_button.wrapper_object().click_input()
-        time.sleep(0.1)
+        
 
         if is_control_visible(
             main_window,
@@ -618,7 +618,7 @@ def recover_ui(main_window, max_attempts=5):
     # วิธีที่ 2: fallback เป็นการกด ESC วนหลายรอบ
     for attempt in range(1, max_attempts + 1):
         send_keys("{ESC}")
-        time.sleep(0.2)
+        
 
         if is_control_visible(
             main_window,
@@ -665,10 +665,10 @@ def main():
         # ตัวจริงเท่านั้น (child_window(title="Riposte POS Application",
         # auto_id="ECPMainWindow", control_type="Window"))
         app = Application(backend="uia").connect(
-            auto_id="ECPMainWindow", timeout=15, visible_only=True
+            auto_id="ECPMainWindow", timeout=5, visible_only=True
         )
         main_window = app.window(auto_id="ECPMainWindow", visible_only=True)
-        main_window.wait("exists visible", timeout=15)
+        main_window.wait("exists visible", timeout=5)
         main_window.set_focus()
         export_controls(main_window)
 
@@ -759,7 +759,6 @@ def main():
                             control_type=HOME_CONTROL_TYPE,
                             wait_states="exists visible",
                         )
-                        time.sleep(0.2)  # แก้: ลดจาก 1 วิ (ลด latency)
 
                         wait_and_click(
                             main_window,
@@ -767,7 +766,6 @@ def main():
                             control_type="ListItem",
                             wait_states="exists visible",
                         )
-                        time.sleep(0.2)  # แก้: ลดจาก 1 วิ (ลด latency)
 
                         click_next(main_window)  # ถัดไป (หลังเลือกกล่อง)
 
@@ -775,7 +773,6 @@ def main():
                         handle_dangerous_goods_question(main_window)
 
                         click_next(main_window)  # ยืนยัน (ปุ่มเดียวกัน auto_id)
-                        time.sleep(0.2)  # แก้: ลดจาก 1 วิ (ลด latency)
 
                         # น้ำหนัก
                         # แก้: เพิ่ม auto_id="LabelForTextBox" ระบุให้เจาะจงว่า
@@ -804,8 +801,6 @@ def main():
                         # Alert แทรกถามให้ยืนยัน (ถ้ามี)
                         handle_postcode_overlap_alert(main_window)
 
-                        time.sleep(0.5)  # แก้: ลดจาก 2 วิ (รายการบริการโหลดจากเซิร์ฟเวอร์ เผื่อไว้หน่อย)
-
                         # เลือกบริการ -- ยืนยันจาก controls dump จริงแล้วว่า
                         # ปุ่มที่ต้องกดคือ auto_id="ShippingService_2572"
                         # (เลิกใช้ found_index=0 guess และ hotkey "0" แบบเดิม)
@@ -815,7 +810,6 @@ def main():
                             control_type="Button",
                             wait_states="exists visible",
                         )
-                        time.sleep(0.1)  # แก้: ลดจาก 1 วิ (ลด latency)
 
                         # แก้: ช่วงนี้มีโอกาสเจอหน้า "ข้อมูลผู้ส่ง" (customer
                         # ที่มาใช้บริการ) แทรกมา บางครั้งกดถัดไปแล้วหน้าไม่
