@@ -90,6 +90,18 @@ DANGEROUS_GOODS_ANSWER_AUTO_ID = "Confirmed"
 # คือตัวที่ต้องการใช้จริง
 SHIPPING_SERVICE_AUTO_ID = "ShippingService_2572"
 
+# แก้: Alert ถาม "ทำรายการซ้ำโดยใช้ข้อมูลกล่อง/สินค้าอันตราย/บริการเดิม
+# ไหม" (auto_id="EG.Shipping.ConfirmNexModeAlert") ขึ้นทุกครั้งที่กด Home
+# (auto_id=HOME_AUTO_ID) หลังเพิ่งทำรายการก่อนหน้าสำเร็จในเซสชันเดียวกัน
+# (ยืนยันจากผู้ใช้ทดสอบมือแล้ว) มีปุ่ม auto_id="Yes" (ENTER) กับ
+# auto_id="No" (ESC) -- ตอบ "Yes" เสมอ เพราะกล่อง/สินค้าอันตราย/บริการที่
+# สคริปต์นี้ใช้เป็นค่าคงที่เดิมทุกแถวอยู่แล้ว (ไม่เคยเปลี่ยนตาม CSV) จึงไม่มี
+# กรณีที่ต้องตอบ "No" เพื่อเริ่มใหม่ทั้งหมด ตอบ "Yes" แล้วจะข้ามหน้าสินค้า
+# อันตรายไปเลย และบริการ 2572 จะถูกเลือกอัตโนมัติ (ยืนยันจากผู้ใช้แล้ว)
+# ส่วนช่องที่ต้องเปลี่ยนทุกแถว (ชื่อ/รหัสไปรษณีย์/ที่อยู่) fill_edit() ใช้
+# set_edit_text() ซึ่งเขียนทับค่าเดิมอยู่แล้ว (ไม่ได้ต่อท้าย) จึงปลอดภัย
+REPEAT_TRANSACTION_ALERT_YES_AUTO_ID = "Yes"
+
 
 def load_processed_data(log_filename=LOG_FILENAME):
     """อ่านรายการที่ทำสำเร็จแล้วจากไฟล์ log"""
@@ -267,6 +279,31 @@ def fill_edit(window, value, timeout=1.5, force_type_keys=False, **criteria):
         print(f"[ERROR] ค่าที่ต้องการกรอก: {value!r}")
         print(f"[ERROR] {type(error).__name__}: {error}")
         raise
+
+
+def handle_repeat_transaction_alert(window, timeout=2):
+    """
+    หลังกด Home (auto_id=HOME_AUTO_ID) ถ้าเพิ่งทำรายการก่อนหน้าสำเร็จ แอปจะ
+    ถาม Alert "ทำรายการซ้ำโดยใช้ข้อมูลเดิมไหม"
+    (auto_id="EG.Shipping.ConfirmNexModeAlert") ตอบ "Yes" เสมอ (ดูเหตุผล
+    เต็มที่คอมเมนต์ข้าง REPEAT_TRANSACTION_ALERT_YES_AUTO_ID ด้านบน) --
+    ข้ามหน้าสินค้าอันตรายไปเลย และบริการ 2572 ถูกเลือกอัตโนมัติ ประหยัดเวลา
+    ต่อใบได้เยอะ ยืนยันจากการทดสอบจริงของผู้ใช้แล้ว
+    ถ้าไม่เจอ Alert (เช่น รายการแรกสุดของรัน ยังไม่มีรายการก่อนหน้าให้ทำซ้ำ)
+    ข้ามไปเงียบๆ ไม่ throw
+    """
+    if is_control_visible(
+        window,
+        timeout=timeout,
+        auto_id=REPEAT_TRANSACTION_ALERT_YES_AUTO_ID,
+        control_type="Button",
+    ):
+        print("[DEBUG] พบ Alert ยืนยันทำรายการซ้ำ -> ตอบ 'Yes' (ใช้ข้อมูลเดิม)")
+        wait_and_click(
+            window,
+            auto_id=REPEAT_TRANSACTION_ALERT_YES_AUTO_ID,
+            control_type="Button",
+        )
 
 
 def handle_dangerous_goods_question(window, timeout=1):
@@ -768,6 +805,11 @@ def main():
                             control_type=HOME_CONTROL_TYPE,
                             wait_states="exists visible",
                         )
+
+                        # แก้: ตอบ Alert "ทำรายการซ้ำ" ถ้าขึ้นมา (จะขึ้นทุก
+                        # ครั้งหลังทำรายการก่อนหน้าสำเร็จ) ตอบ Yes เพื่อข้าม
+                        # หน้าสินค้าอันตรายและให้บริการ 2572 เลือกอัตโนมัติ
+                        handle_repeat_transaction_alert(main_window)
 
                         wait_and_click(
                             main_window,
