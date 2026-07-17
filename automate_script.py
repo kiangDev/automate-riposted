@@ -35,10 +35,10 @@ DEFAULT_ADDRESS_SEARCH = "11"
 ADDRESS_SEARCH_FALLBACK_CANDIDATES = ["11", "12", "88", "1", "2", "10"]
 
 # ---------------------------------------------------------------
-# TODO: หลังรันครั้งแรกแล้วเปิด controls.txt ขึ้นมาดู ให้หา title
-# ของ control/ข้อความที่ปรากฏ "เฉพาะตอนพิมพ์สำเร็จ" เท่านั้น
-# (เช่น ป้ายข้อความ "พิมพ์สำเร็จ", "เสร็จสิ้น", ปุ่ม "พิมพ์ใบปะหน้าใหม่" ฯลฯ)
-# แล้วนำมาแทนที่ regex ด้านล่างนี้ให้ตรงกับของจริง
+# แก้: TODO เดิมตรงนี้ไม่เคยถูกทำจริง -- ยืนยันจาก controls dump จริงแล้วว่า
+# แอปไม่มีหน้า/ข้อความ "สำเร็จ" แบบนี้เลย wait_for_success() เลิกใช้ regex
+# นี้แล้ว เปลี่ยนไปเช็ค MAIN_MENU_AUTO_ID แทน (ดูคอมเมนต์ตรงนั้น) เก็บตัวแปร
+# นี้ไว้เฉยๆ ไม่ได้ใช้แล้ว กันเผื่อมีโค้ดอื่นอ้างถึง
 # ---------------------------------------------------------------
 SUCCESS_TITLE_RE = r".*(สำเร็จ|เสร็จสิ้น|พิมพ์เสร็จ).*"
 # แก้: มีหลักฐานจริงแล้วว่าค่านี้ต่ำเกินไปอันตราย (เคยลอง 4 วิ แล้วเจอ
@@ -61,6 +61,12 @@ TRACKING_NUMBER_RE = re.compile(r"^[A-Z]{2}\d{9}[A-Z]{2}$")
 # (mojibake) ทำให้ค้นหาด้วย title_re ภาษาไทยไม่ได้ผล -> ใช้ auto_id แทน
 HOME_AUTO_ID = "Shipping"
 HOME_CONTROL_TYPE = "ListItem"
+
+# แก้: auto_id ของหน้าเมนูหลักสุด (pane "Main" ตอนยังไม่ได้กด "รับฝากสิ่งของ")
+# ยืนยันจาก controls dump จริงแล้วว่าหลังพิมพ์ใบปะหน้าสำเร็จ แอปจะกลับมาที่
+# หน้านี้ทันที (ไม่มีหน้า/ข้อความ "สำเร็จ" ใดๆ เลย) ใช้เป็นสัญญาณยืนยันความ
+# สำเร็จตัวจริงใน wait_for_success() แทนการเดา SUCCESS_TITLE_RE เดิม
+MAIN_MENU_AUTO_ID = "Menu.MainMenu"
 
 # ปุ่มเลือกกล่องสำเร็จรูป "ข" ที่หน้า MailPieceShape
 # ยืนยันแล้วจาก controls dump จริง (dump.txt): tile "กล่องสำเร็จรูป ข" คือ
@@ -593,15 +599,26 @@ def write_output_csv(rows, fieldnames, filename=OUTPUT_CSV_FILENAME):
 
 def wait_for_success(window, timeout=SUCCESS_WAIT_TIMEOUT):
     """
-    แก้: ฟังก์ชันนี้เคยหายไปจากไฟล์เหมือนกัน (แต่ยังถูกเรียกใน main() อยู่ ->
-    จะ crash ด้วย NameError ทันทีที่รายการแรกทำถึงจุดนี้) ตรวจสอบว่าถึงหน้า/
-    ข้อความยืนยันความสำเร็จจริงหรือไม่ ก่อนจะถือว่ารายการนี้ทำสำเร็จ ห้ามลด
-    timeout นี้ต่ำเกินไป (ดูคำเตือนตรง SUCCESS_WAIT_TIMEOUT ด้านบนไฟล์)
+    แก้: เจอหลักฐานจริงแล้วว่า SUCCESS_TITLE_RE เดิม (หาข้อความ "สำเร็จ/
+    เสร็จสิ้น/พิมพ์เสร็จ") ไม่เคยถูกต้องเลยตั้งแต่แรก (ในไฟล์เคยมี TODO
+    ค้างบอกตรงๆ ว่ายังไม่เคยเอาไปเทียบกับ controls dump จริงเลย) ยืนยันจาก
+    dump จริงว่าหลังพิมพ์เสร็จ แอปไม่มีหน้า/ข้อความ "สำเร็จ" ใดๆ เลย แต่กลับ
+    ไปหน้า Menu.MainMenu ทันที (pane "Main" auto_id="Menu.MainMenu") พร้อม
+    เลขพัสดุที่เพิ่งพิมพ์ถูกเพิ่มเข้า RetailStackView (ตะกร้ารายการที่ยังไม่
+    Settle) -- แปลว่าที่ผ่านมาพิมพ์สำเร็จทุกใบจริง แต่สคริปต์คิดว่าล้มเหลว
+    ทุกครั้ง เพราะหาข้อความที่ไม่มีทางเจอ เลยไม่เคยบันทึก log เลย
+
+    เปลี่ยนมาเช็คว่ากลับมาที่ Menu.MainMenu แล้วหรือยังแทน (ผ่าน
+    get_main_pane_auto_id()) เป็นสัญญาณที่ยืนยันจาก dump จริง ไม่ใช่เดา
+    ห้ามลด timeout นี้ต่ำเกินไป (ดูคำเตือนตรง SUCCESS_WAIT_TIMEOUT ด้านบนไฟล์)
     """
-    print("[DEBUG] กำลังตรวจสอบหน้าจอยืนยันความสำเร็จ...")
-    if is_control_visible(window, timeout=timeout, title_re=SUCCESS_TITLE_RE):
-        print("[DEBUG] พบสัญญาณความสำเร็จ")
-        return True
+    print("[DEBUG] กำลังตรวจสอบว่ากลับมาหน้าเมนูหลักแล้วหรือยัง (สัญญาณความสำเร็จ)...")
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if get_main_pane_auto_id(window) == MAIN_MENU_AUTO_ID:
+            print("[DEBUG] พบสัญญาณความสำเร็จ (กลับมาหน้าเมนูหลักแล้ว)")
+            return True
+        time.sleep(0.2)
 
     print("[WARNING] ไม่พบสัญญาณความสำเร็จภายในเวลาที่กำหนด")
     dump_controls_on_failure(window, "success_screen")
@@ -610,18 +627,20 @@ def wait_for_success(window, timeout=SUCCESS_WAIT_TIMEOUT):
 
 def capture_tracking_number(window, timeout=5):
     """
-    แก้: ฟังก์ชันนี้เคยหายไปจากไฟล์เช่นกัน อ่านเลขพัสดุ (tracking number)
-    จาก auto_id="SummaryView" -- ยืนยันจาก controls dump จริงแล้วว่าเลขพัสดุ
-    (เช่น "JH000236315TH") ปรากฏเป็น Static text อยู่ในนั้น ใช้
-    TRACKING_NUMBER_RE แมตช์แทนการหา label ภาษาไทย (มักเพี้ยนผ่าน UI
-    Automation) คืน None ถ้าหาไม่เจอ (ไม่ throw หยุดสคริปต์)
+    แก้: เดิมอ่านจาก auto_id="SummaryView" แต่ยืนยันจาก dump จริงแล้วว่าพอ
+    กลับมาหน้า Menu.MainMenu (สัญญาณความสำเร็จตัวใหม่ ดู wait_for_success())
+    หน้า SummaryView จะไม่มีอยู่แล้ว -- เลขพัสดุที่เพิ่งพิมพ์จะถูกเพิ่มเข้า
+    RetailStackView (ตะกร้ารายการที่ยังไม่ Settle) แทน เปลี่ยนมาอ่านจากตรงนั้น
+    เอาตัวสุดท้ายในลิสต์ (เพิ่งเพิ่มล่าสุด) ใช้ TRACKING_NUMBER_RE แมตช์แทน
+    การหา label ภาษาไทย (มักเพี้ยนผ่าน UI Automation) คืน None ถ้าหาไม่เจอ
+    (ไม่ throw หยุดสคริปต์)
     """
     try:
-        summary_view = window.child_window(
-            auto_id="SummaryView", control_type="Custom"
+        stack_view = window.child_window(
+            auto_id="RetailStackView", control_type="Custom"
         )
-        summary_view.wait("exists visible", timeout=timeout)
-        wrapper = summary_view.wrapper_object()
+        stack_view.wait("exists visible", timeout=timeout)
+        wrapper = stack_view.wrapper_object()
 
         matches = []
         for item in wrapper.descendants():
@@ -634,7 +653,7 @@ def capture_tracking_number(window, timeout=5):
             print(f"[DEBUG] พบเลขพัสดุ: {tracking_number}")
             return tracking_number
 
-        print("[WARNING] หาเลขพัสดุใน SummaryView ไม่เจอ")
+        print("[WARNING] หาเลขพัสดุใน RetailStackView ไม่เจอ")
         return None
 
     except Exception as error:
