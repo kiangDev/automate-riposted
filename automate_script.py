@@ -813,11 +813,22 @@ def main():
                         # เลือกบริการ -- ยืนยันจาก controls dump จริงแล้วว่า
                         # ปุ่มที่ต้องกดคือ auto_id="ShippingService_2572"
                         # (เลิกใช้ found_index=0 guess และ hotkey "0" แบบเดิม)
+                        # แก้: เจอสาเหตุจริงของบั๊ก "หยุดนิ่งแล้ว ESC กลับหน้าแรก"
+                        # จาก traceback จริงแล้ว -- ไม่ใช่ timeout ของ
+                        # handle_postcode_overlap_alert() (อันนั้นกด
+                        # ProceedCommand สำเร็จปกติ) แต่เป็นจุดนี้: ไม่เคยระบุ
+                        # timeout= มาก่อน เลยใช้ default=5 วิ ซึ่งไม่พอ เพราะ
+                        # หลังกดปิด Alert แอปต้องเปลี่ยนหน้า/โหลดปุ่มบริการ
+                        # ~39 ปุ่ม บางครั้งเกิน 5 วิ -> control.wait() timeout
+                        # ก่อนถึง click_input() เลย (เม้าเลยไม่ขยับ) แล้ว
+                        # โดน except ด้านบนจับ -> recover_ui() ESC กลับหน้าแรก
+                        # เพิ่มเป็น 10 วิให้เผื่อการโหลดหน้านี้โดยเฉพาะ
                         wait_and_click(
                             main_window,
                             auto_id=SHIPPING_SERVICE_AUTO_ID,
                             control_type="Button",
                             wait_states="exists visible",
+                            timeout=10,
                         )
 
                         # แก้: ช่วงนี้มีโอกาสเจอหน้า "ข้อมูลผู้ส่ง" (customer
