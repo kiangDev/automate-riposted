@@ -41,12 +41,15 @@ ADDRESS_SEARCH_FALLBACK_CANDIDATES = ["11", "12", "88", "1", "2", "10"]
 # แล้วนำมาแทนที่ regex ด้านล่างนี้ให้ตรงกับของจริง
 # ---------------------------------------------------------------
 SUCCESS_TITLE_RE = r".*(สำเร็จ|เสร็จสิ้น|พิมพ์เสร็จ).*"
-# แก้: เจอค่านี้ถูกแก้เป็น 3 โดยไม่ได้ตั้งใจ (ไม่ใช่การแก้ที่ผมทำเอง คล้ายเคส
-# ADDRESS_SEARCH_FALLBACK_CANDIDATES=88 ที่เจอก่อนหน้านี้) อันตรายมากเพราะ
-# เป็นตัวตัดสินว่ารายการนี้ "สำเร็จจริง" ก่อนบันทึก log -- ถ้ารอไม่พอ จะถือว่า
-# ไม่สำเร็จทั้งที่ปริ้นออกมาแล้วจริง แล้วพิมพ์ซ้ำอีกใบตอนรันใหม่ กลับเป็น 4
-# เหมือนเดิม (ค่านี้ไม่ควรลดเพื่อประหยัดเวลา เสี่ยงเกินไป)
-SUCCESS_WAIT_TIMEOUT = 8
+# แก้: มีหลักฐานจริงแล้วว่าค่านี้ต่ำเกินไปอันตราย (เคยลอง 4 วิ แล้วเจอ
+# "ไม่พบสัญญาณความสำเร็จ" ทั้งที่พิมพ์จริงน่าจะเสร็จแล้ว พอถือว่าไม่สำเร็จ
+# recover_ui() ก็กดปุ่มหน้าหลักไม่ติดตามไปด้วย จนรายการถัดไปค้างสนิทต้อง
+# kill โปรแกรมเอง) นี่คือค่าที่อันตรายที่สุดในไฟล์นี้ (ตัดสินว่ารายการนี้
+# "สำเร็จจริง" ก่อนบันทึก log ถ้ารอไม่พอจะถือว่าไม่สำเร็จทั้งที่ปริ้นออกมา
+# แล้วจริง แล้วพิมพ์ซ้ำอีกใบตอนรันใหม่) ตกลงกับผู้ใช้แล้วว่าใช้ 10 ไม่ควรลด
+# ต่ำกว่านี้เพื่อความเร็ว เพราะเป็น "เพดาน" ไม่ใช่เวลารอตายตัว ใบที่พิมพ์เร็ว
+# ปกติจะคืนค่าทันทีอยู่แล้วไม่ว่าตั้งเพดานไว้เท่าไหร่
+SUCCESS_WAIT_TIMEOUT = 10
 
 # เลขพัสดุ (tracking number) ของไปรษณีย์ไทย รูปแบบมาตรฐาน: ตัวอักษร 2 ตัว +
 # ตัวเลข 9 หลัก + ตัวอักษร 2 ตัว (เช่น JH000205755TH) แมตช์ด้วย pattern นี้
@@ -89,6 +92,18 @@ DANGEROUS_GOODS_ANSWER_AUTO_ID = "Confirmed"
 # ค่าธรรมเนียมโชว์อยู่แล้ว น่าจะถูกเลือกเป็น default อยู่ก่อนแล้วด้วย)
 # คือตัวที่ต้องการใช้จริง
 SHIPPING_SERVICE_AUTO_ID = "ShippingService_2572"
+
+# แก้: Alert ถาม "ทำรายการซ้ำโดยใช้ข้อมูลกล่อง/สินค้าอันตราย/บริการเดิม
+# ไหม" (auto_id="EG.Shipping.ConfirmNexModeAlert") ขึ้นทุกครั้งที่กด Home
+# (auto_id=HOME_AUTO_ID) หลังเพิ่งทำรายการก่อนหน้าสำเร็จในเซสชันเดียวกัน
+# (ยืนยันจากผู้ใช้ทดสอบมือแล้ว) มีปุ่ม auto_id="Yes" (ENTER) กับ
+# auto_id="No" (ESC) -- ตอบ "Yes" เสมอ เพราะกล่อง/สินค้าอันตราย/บริการที่
+# สคริปต์นี้ใช้เป็นค่าคงที่เดิมทุกแถวอยู่แล้ว (ไม่เคยเปลี่ยนตาม CSV) จึงไม่มี
+# กรณีที่ต้องตอบ "No" เพื่อเริ่มใหม่ทั้งหมด ตอบ "Yes" แล้วจะข้ามหน้าสินค้า
+# อันตรายไปเลย และบริการ 2572 จะถูกเลือกอัตโนมัติ (ยืนยันจากผู้ใช้แล้ว)
+# ส่วนช่องที่ต้องเปลี่ยนทุกแถว (ชื่อ/รหัสไปรษณีย์/ที่อยู่) fill_edit() ใช้
+# set_edit_text() ซึ่งเขียนทับค่าเดิมอยู่แล้ว (ไม่ได้ต่อท้าย) จึงปลอดภัย
+REPEAT_TRANSACTION_ALERT_YES_AUTO_ID = "Yes"
 
 
 def load_processed_data(log_filename=LOG_FILENAME):
@@ -269,6 +284,37 @@ def fill_edit(window, value, timeout=1.5, force_type_keys=False, **criteria):
         raise
 
 
+def handle_repeat_transaction_alert(window, timeout=5):
+    """
+    หลังกด Home (auto_id=HOME_AUTO_ID) ถ้าเพิ่งทำรายการก่อนหน้าสำเร็จ แอปจะ
+    ถาม Alert "ทำรายการซ้ำโดยใช้ข้อมูลเดิมไหม"
+    (auto_id="EG.Shipping.ConfirmNexModeAlert") ตอบ "Yes" เสมอ (ดูเหตุผล
+    เต็มที่คอมเมนต์ข้าง REPEAT_TRANSACTION_ALERT_YES_AUTO_ID ด้านบน) --
+    ข้ามหน้าสินค้าอันตรายไปเลย และบริการ 2572 ถูกเลือกอัตโนมัติ ประหยัดเวลา
+    ต่อใบได้เยอะ ยืนยันจากการทดสอบจริงของผู้ใช้แล้วว่า Yes=ทำซ้ำ (ไปหน้า
+    เลือกกล่องเลย) No=กลับหน้าแรกเฉยๆ (ต้องกด "รับฝากสิ่งของ" ใหม่)
+
+    timeout=5 เพราะทดสอบจริงพบว่า Alert นี้เด้งช้ากว่าที่คิด เช็คด้วย 2 วิ
+    ไม่ทัน ทำให้โค้ดคิดว่าไม่มี Alert แล้วเดินหน้าต่อ แต่ Alert มาโผล่ทีหลัง
+    ชนกับปุ่มอื่นแทน รอ 5 วิตรงนี้ให้ดักได้ทันตั้งแต่ต้น
+
+    ถ้าไม่เจอ Alert (เช่น รายการแรกสุดของรัน ยังไม่มีรายการก่อนหน้าให้ทำซ้ำ)
+    ข้ามไปเงียบๆ ไม่ throw
+    """
+    if is_control_visible(
+        window,
+        timeout=timeout,
+        auto_id=REPEAT_TRANSACTION_ALERT_YES_AUTO_ID,
+        control_type="Button",
+    ):
+        print("[DEBUG] พบ Alert ยืนยันทำรายการซ้ำ -> ตอบ 'Yes' (ใช้ข้อมูลเดิม)")
+        wait_and_click(
+            window,
+            auto_id=REPEAT_TRANSACTION_ALERT_YES_AUTO_ID,
+            control_type="Button",
+        )
+
+
 def handle_dangerous_goods_question(window, timeout=1):
     """
     หน้าคำถามสินค้าอันตราย (EG.Shipping.DangerousGoodsQuestion) จะแทรกโผล่มา
@@ -358,7 +404,11 @@ def click_next(window):
         )
     except Exception:
         print("[DEBUG] ไม่พบปุ่มด้วย auto_id, ลอง fallback เป็น title_re='ถัดไป'")
-        wait_and_click(window, title_re=r"^ถัดไป$")
+        # แก้: ต้องมี control_type="Button" เสมอ -- ไม่งั้น title_re จะ
+        # แมตช์ทั้งตัว Button และ Static ลูก auto_id="CaptionTextBlock" ที่
+        # โชว์ข้อความเดียวกัน กลายเป็น ElementAmbiguousError (เคยพังมาแล้ว
+        # จริงจากจุดเดียวกันนี้)
+        wait_and_click(window, title_re=r"^ถัดไป$", control_type="Button")
 
 
 
@@ -769,6 +819,12 @@ def main():
                             wait_states="exists visible",
                         )
 
+                        # แก้: กู้คืน handle_repeat_transaction_alert() ที่
+                        # หายไปจากไฟล์ (โดนลบพร้อมกับค่าคงที่
+                        # REPEAT_TRANSACTION_ALERT_YES_AUTO_ID และตัวฟังก์ชัน
+                        # เอง) กลับมาที่จุดนี้เหมือนเดิม
+                        handle_repeat_transaction_alert(main_window)
+
                         wait_and_click(
                             main_window,
                             auto_id=BOX_TYPE_AUTO_ID,
@@ -828,7 +884,7 @@ def main():
                             auto_id=SHIPPING_SERVICE_AUTO_ID,
                             control_type="Button",
                             wait_states="exists visible",
-                            timeout=8,
+                            timeout=10,
                         )
 
                         # แก้: ช่วงนี้มีโอกาสเจอหน้า "ข้อมูลผู้ส่ง" (customer
@@ -860,6 +916,20 @@ def main():
                         # (CustomerFirstName, CustomerLastName, PhoneNumber)
                         # ไม่ต้องพึ่ง title_re ภาษาไทยที่เพี้ยน (mojibake) อีก
                         # ต่อไป -- ยิงตรง auto_id เลย แม่นกว่าและเร็วกว่า
+
+                        # แก้: หน้านี้มีช่อง PostalCode ของตัวเอง (คนละช่องกับ
+                        # หน้า Destination ก่อนหน้า) พบว่าตอนทำรายการซ้ำ ค่า
+                        # เก่าจากรายการก่อนหน้าจะค้างอยู่ในช่องนี้ -- กรอกทับ
+                        # ด้วย zip_code ตรงๆ เลย ไม่พึ่งให้ search_and_select_
+                        # address() sync ให้เอง (ไม่ชัวร์ว่า sync จริงหรือ
+                        # เปล่า) ป้องกันใบปะหน้าออกมาผิดรหัสไปรษณีย์
+                        fill_edit(
+                            main_window,
+                            zip_code,
+                            auto_id="PostalCode",
+                            control_type="Edit",
+                        )
+
                         fill_edit(
                             main_window,
                             first_name,
@@ -888,7 +958,14 @@ def main():
                         report_validation_errors(main_window)
 
                         # สิ้นสุดกระบวนการ
-                        wait_and_click(main_window, title_re=r"^ไม่$")
+                        # แก้: ต้องมี control_type="Button" เสมอ -- ไม่งั้น
+                        # title_re จะแมตช์ทั้งตัว Button และ Static ลูก
+                        # auto_id="CaptionTextBlock" ที่โชว์ข้อความเดียวกัน
+                        # กลายเป็น ElementAmbiguousError (นี่คือจุดที่เคย
+                        # พังจริงมาแล้วหลายรอบ ห้ามลบ control_type ตรงนี้ออก)
+                        wait_and_click(
+                            main_window, title_re=r"^ไม่$", control_type="Button"
+                        )
                         time.sleep(0.1)
 
                         # แก้: ตรวจสอบหน้า success จริงก่อนบันทึก log
