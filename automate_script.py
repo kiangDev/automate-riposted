@@ -121,15 +121,24 @@ def clean_value(value):
 
 
 def value_or_default(value, default):
-    """คืนค่าจาก CSV ถ้ามี ไม่งั้นใช้ค่า default"""
+    """
+    แก้: ฟังก์ชันนี้เคยหายไปจากไฟล์อีกรอบ (โดนลบพร้อมกับ auditทั่ว) ทั้งที่
+    ยังถูกเรียกใช้ทุกแถวใน main() (address_search/phone_number/weight) --
+    ถ้าไม่มีฟังก์ชันนี้ สคริปต์จะ crash ทันทีตั้งแต่แถวแรก ก่อนแตะ UI ด้วยซ้ำ
+    คืนค่าจาก CSV ถ้ามี ไม่งั้นใช้ค่า default
+    """
     cleaned = clean_value(value)
     return cleaned if cleaned else default
 
 
 def dump_controls_on_failure(window, tag):
     """
-    เมื่อหา control ไม่เจอ ให้ dump control tree ปัจจุบันลงไฟล์แยก
-    เพื่อเทียบกับ title_re/regex ที่ใช้ค้นหา ช่วย debug ได้เร็วขึ้น
+    แก้: ฟังก์ชันนี้เคยหายไปจากไฟล์เช่นกัน ทั้งที่ยังถูกเรียกใน
+    wait_and_click() และ wait_for_success() ตอน error -- ถ้าไม่มีฟังก์ชันนี้
+    ตอนหา control ไม่เจอครั้งแรก จะ crash ด้วย NameError แทนที่จะ dump ไฟล์
+    ให้ดู debug ตามที่ควรจะเป็น เมื่อหา control ไม่เจอ ให้ dump control tree
+    ปัจจุบันลงไฟล์แยก เพื่อเทียบกับ title_re/regex ที่ใช้ค้นหา ช่วย debug
+    ได้เร็วขึ้น
     """
     filename = f"controls_fail_{tag}.txt"
     try:
@@ -138,6 +147,7 @@ def dump_controls_on_failure(window, tag):
               f"-> เปิดไฟล์นี้เทียบกับ title_re ที่ใช้ค้นหา")
     except Exception as dump_error:
         print(f"[WARNING] dump control tree ไม่สำเร็จ: {dump_error}")
+
 
 
 def wait_and_click(window, timeout=5, wait_states="exists visible enabled", **criteria):
@@ -164,7 +174,7 @@ def wait_and_click(window, timeout=5, wait_states="exists visible enabled", **cr
         raise
 
 
-def resolve_edit_wrapper(wrapper, timeout=15):
+def resolve_edit_wrapper(wrapper, timeout=1.5):
     """
     ยืนยันจาก controls dump หน้ากรอกน้ำหนัก (EG.Shipping.Weight) แล้วว่า
     title_re ที่ใช้ค้นก่อนหน้านี้ (เช่น r".*น้ำหนัก.*") จะไปแมตช์กับ Static
@@ -198,7 +208,7 @@ def resolve_edit_wrapper(wrapper, timeout=15):
     )
 
 
-def fill_edit(window, value, timeout=5, force_type_keys=False, **criteria):
+def fill_edit(window, value, timeout=1.5, force_type_keys=False, **criteria):
     """
     รอช่องกรอก ล้างข้อมูลเดิม แล้วกรอกค่าใหม่
 
@@ -259,7 +269,7 @@ def fill_edit(window, value, timeout=5, force_type_keys=False, **criteria):
         raise
 
 
-def handle_dangerous_goods_question(window, timeout=5):
+def handle_dangerous_goods_question(window, timeout=1):
     """
     หน้าคำถามสินค้าอันตราย (EG.Shipping.DangerousGoodsQuestion) จะแทรกโผล่มา
     หลังเลือกกล่องเสร็จ ไม่ได้โผล่ทุกครั้งแน่นอน (ยังไม่ยืนยัน) เลยเช็คก่อนว่า
@@ -274,12 +284,11 @@ def handle_dangerous_goods_question(window, timeout=5):
         click_next(window)
 
 
-def handle_postcode_overlap_alert(window, timeout=5):
+def handle_postcode_overlap_alert(window, timeout=1):
     """
     หลังกรอกรหัสไปรษณีย์ที่หน้า "Destination" (EG.Shipping.Destination,
     ช่อง auto_id="PostCodeDestination") บางครั้งรหัสที่พิมพ์ครอบคลุมหลาย
-    พื้นที่ จะมี Alert แทรกขึ้นมา (ระบบเช็ครหัสไปรษณีย์กับเซิร์ฟเวอร์ ผู้ใช้
-    เคยยืนยันแล้วว่าบางครั้งใช้เวลานานเกือบเต็ม timeout จริง)
+    พื้นที่ จะมี Alert แทรกขึ้นมา
 
     แก้: ยืนยันจาก controls dump จริงของ Alert นี้แล้ว 100% (ผู้ใช้ส่งมาตอน
     Alert กำลังโชว์อยู่จริง) นี่คือ Alert คนละตัวกับ
@@ -293,13 +302,6 @@ def handle_postcode_overlap_alert(window, timeout=5):
     ก่อนหน้านี้เคยเข้าใจผิดคิดว่า auto_id="ProceedCommand" ไม่มีอยู่จริง
     (ไปเจอ dump ของ Alert อีกตัวที่หน้าอื่นแทน) เลยเปลี่ยนไปเช็คผิดตัว --
     กลับมาใช้ "ProceedCommand" ของ Alert นี้ตามเดิมแล้ว
-
-    แก้: คืน timeout จาก 3 กลับเป็น 5 -- ตอน 3 วิ ทำให้พลาด Alert ที่มาช้า
-    (เซิร์ฟเวอร์ตอบช้ากว่า 3 วิ) แล้วสคริปต์ไปพยายามกดปุ่มเลือกบริการต่อทันที
-    ทั้งที่ Alert ยังบังหน้าจออยู่จริง กดไม่ติด -> error -> recover_ui() กด
-    ESC ถอยกลับไปหน้าแรก (คือปัญหาที่เจอ "ยังไม่ทันกดเลือกบริการก็ถอยกลับ")
-    การพลาดจุดนี้แล้ว fail ทั้งแถวช้ากว่าแค่รอเพิ่มอีก 2 วิเยอะมาก จึงคุ้มกว่า
-    ที่จะรอให้นานพอจริงๆ
     """
     if is_control_visible(
         window, timeout=timeout, auto_id="ProceedCommand", control_type="Button"
@@ -342,17 +344,9 @@ def handle_customer_capture_postal_code_alert(window, timeout=1.5):
 
 def click_next(window):
     """
-    กดปุ่มถัดไป/ยืนยัน (ปุ่มหลักของหน้า) -- ฟังก์ชันนี้ถูกเรียกถี่ที่สุดใน
-    flow ทั้งหมด (ทุกครั้งที่เปลี่ยนหน้า) ลองใช้ auto_id="LocalCommand_Submit"
-    ก่อน (เชื่อถือได้กว่า title ภาษาไทยที่เพี้ยนจาก UI Automation) ถ้าไม่เจอ
-    ค่อย fallback ไปหา title "ถัดไป"
-
-    แก้: คืน timeout จาก 3 กลับเป็น 5 -- ด้วยเหตุผลเดียวกับ
-    handle_postcode_overlap_alert() คือถ้าปุ่มยังไม่พร้อมจริง (หน้าเพิ่ง
-    เปลี่ยน/รอ validation จากเซิร์ฟเวอร์) แล้ว timeout สั้นเกินไป จะโยน
-    exception ทันที -> recover_ui() กด ESC ถอยกลับทั้งแถว ซึ่งช้ากว่าแค่รอ
-    เพิ่มอีก 2 วิมาก เพราะฟังก์ชันนี้โดนเรียกเกือบทุกขั้นตอน จุดนี้จึงมีโอกาส
-    เกิด false-fail บ่อยที่สุดในทั้งไฟล์
+    กดปุ่มถัดไป/ยืนยัน (ปุ่มหลักของหน้า)
+    ลองใช้ auto_id="LocalCommand_Submit" ก่อน (เชื่อถือได้กว่า title ภาษาไทย
+    ที่เพี้ยนจาก UI Automation) ถ้าไม่เจอค่อย fallback ไปหา title "ถัดไป"
     """
     try:
         wait_and_click(
@@ -360,13 +354,12 @@ def click_next(window):
             auto_id=SUBMIT_AUTO_ID,
             control_type="Button",
             wait_states="exists visible",
-            timeout=5,
+            timeout=1.5 ,
         )
     except Exception:
         print("[DEBUG] ไม่พบปุ่มด้วย auto_id, ลอง fallback เป็น title_re='ถัดไป'")
         wait_and_click(window, title_re=r"^ถัดไป$")
 
-    
 
 
 def get_main_pane_auto_id(window):
@@ -384,7 +377,7 @@ def get_main_pane_auto_id(window):
         return None
 
 
-def click_next_verified(window, max_attempts=3, settle_time=0.6):
+def click_next_verified(window, max_attempts=3, settle_time=0.5):
     """
     แก้: ฟังก์ชันนี้เคยหายไปด้วยเช่นกัน -- ผู้ใช้สังเกตเจอว่าบางครั้งกด
     "ถัดไป" แล้วปุ่ม "ไม่ติด" จริง (หน้าไม่เปลี่ยน) โดยเฉพาะหน้าข้อมูลผู้ส่ง
@@ -522,7 +515,7 @@ def validate_csv_headers(fieldnames):
 
 
 
-def is_control_visible(window, timeout=2, **criteria):
+def is_control_visible(window, timeout=1.5, **criteria):
     """เช็คว่า control ปรากฏอยู่จริงหรือไม่ โดยไม่ throw ถ้าไม่เจอ"""
     try:
         control = window.child_window(**criteria)
@@ -756,8 +749,6 @@ def main():
                         continue
 
                     print(f"--- กำลังทำรายการที่ {index}: {first_name} {last_name} ---")
-                    row_start_time = time.time()  # แก้: จับเวลาต่อแถว จะได้เห็นตัวเลขจริง
-                    # แทนการเดา ว่าตอนนี้เฉลี่ยกี่วิ/ใบ ก่อนจะไปตัดอะไรเพิ่ม
 
                     try:
                         # แก้: ลด "enabled" ออก เหลือแค่ "exists visible"
@@ -922,11 +913,9 @@ def main():
                         # ตรงนี้ (ไม่มี I/O เพิ่ม แทบไม่กินเวลาเลย)
                         row["TrackingNo"] = tracking_number or row.get("TrackingNo", "")
 
-                        row_elapsed = time.time() - row_start_time
                         print(
                             f"ทำรายการที่ {index} สำเร็จ และบันทึกลง Log แล้ว "
-                            f"(เลขพัสดุ: {tracking_number or 'ไม่พบ'}) "
-                            f"[ใช้เวลา {row_elapsed:.1f} วิ]"
+                            f"(เลขพัสดุ: {tracking_number or 'ไม่พบ'})"
                         )
 
                     except PywinautoTimeoutError:
