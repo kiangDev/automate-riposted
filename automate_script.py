@@ -902,6 +902,19 @@ def main():
                         # (CustomerFirstName, CustomerLastName, PhoneNumber)
                         # ไม่ต้องพึ่ง title_re ภาษาไทยที่เพี้ยน (mojibake) อีก
                         # ต่อไป -- ยิงตรง auto_id เลย แม่นกว่าและเร็วกว่า
+                        # แก้: หน้านี้มีช่อง PostalCode ของตัวเอง (คนละช่องกับ
+                        # หน้า Destination ก่อนหน้า) พบว่าตอนทำรายการซ้ำ ค่า
+                        # เก่าจากรายการก่อนหน้าจะค้างอยู่ในช่องนี้ -- กรอกทับ
+                        # ด้วย zip_code ตรงๆ เลย ไม่พึ่งให้ search_and_select_
+                        # address() sync ให้เอง (ไม่ชัวร์ว่า sync จริงหรือ
+                        # เปล่า) ป้องกันใบปะหน้าออกมาผิดรหัสไปรษณีย์
+                        fill_edit(
+                            main_window,
+                            zip_code,
+                            auto_id="PostalCode",
+                            control_type="Edit",
+                        )
+
                         fill_edit(
                             main_window,
                             first_name,
@@ -928,6 +941,15 @@ def main():
                         # dump จริงแล้วว่าหน้านี้มีปุ่ม LocalCommand_Submit)
                         click_next(main_window)
                         report_validation_errors(main_window)
+
+                        # แก้: เจอสาเหตุจริงของ ElementAmbiguousError ที่
+                        # title_re=r"^ไม่$" ตรงนี้แล้ว -- Alert "ทำรายการซ้ำ"
+                        # (EG.Shipping.ConfirmNexModeAlert) ไม่ได้ขึ้นทันที
+                        # ตอนกด Home เสมอไป บางรอบขึ้นช้ามาทับพอดีตอนจบ
+                        # ขั้นตอนตรงนี้ ปุ่ม "No" ของมัน title ตรงกับ "ไม่"
+                        # เป๊ะ เลยชนกับปุ่ม "ไม่" ตัวจริงที่ต้องการกด กลายเป็น
+                        # 2 ตัวที่แมตช์พร้อมกัน -- เช็ค/ปิด Alert นี้ก่อนเสมอ
+                        handle_repeat_transaction_alert(main_window)
 
                         # สิ้นสุดกระบวนการ
                         wait_and_click(main_window, title_re=r"^ไม่$")
