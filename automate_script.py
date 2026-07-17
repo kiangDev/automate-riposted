@@ -354,7 +354,7 @@ def click_next(window):
             auto_id=SUBMIT_AUTO_ID,
             control_type="Button",
             wait_states="exists visible",
-            timeout=1.5 ,
+            timeout=3 ,
         )
     except Exception:
         print("[DEBUG] ไม่พบปุ่มด้วย auto_id, ลอง fallback เป็น title_re='ถัดไป'")
