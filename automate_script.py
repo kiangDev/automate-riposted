@@ -403,7 +403,11 @@ def click_next(window):
         )
     except Exception:
         print("[DEBUG] ไม่พบปุ่มด้วย auto_id, ลอง fallback เป็น title_re='ถัดไป'")
-        wait_and_click(window, title_re=r"^ถัดไป$")
+        # แก้: เพิ่ม control_type="Button" กันปัญหาเดียวกับที่เจอตรงปุ่ม
+        # "ไม่" (title_re เฉยๆ แมตช์ทั้ง Button และ Static ลูก
+        # auto_id="CaptionTextBlock" ที่โชว์ข้อความเดียวกัน กลายเป็น
+        # ElementAmbiguousError)
+        wait_and_click(window, title_re=r"^ถัดไป$", control_type="Button")
 
 
 
@@ -955,21 +959,22 @@ def main():
                         click_next(main_window)
                         report_validation_errors(main_window)
 
-                        # แก้: เคยลองเรียก handle_repeat_transaction_alert()
-                        # (ตอบ "Yes") ตรงนี้เพื่อแก้ ElementAmbiguousError
-                        # (title_re="^ไม่$" แมตช์ 2 ตัว เพราะ Alert
-                        # "EG.Shipping.ConfirmNexModeAlert" บางรอบมาทับพอดี
-                        # จังหวะนี้ ปุ่ม "No" ของมัน title ตรงกับ "ไม่" เป๊ะ)
-                        # แต่ทดสอบจริงแล้วพัง: กด "Yes" ตรงนี้ทำให้ปุ่ม "ไม่"
-                        # ตัวจริง (ของ dialog จบกระบวนการปกติ) ไม่ขึ้นมาอีก
-                        # เลย (timeout) แปลว่า Alert ตัวนี้ตอนโผล่จังหวะนี้
-                        # ไม่ใช่แค่ "ทำรายการซ้ำ" แบบที่เข้าใจตอนแรก ยังไม่รู้
-                        # ว่าจริงๆ ควรตอบ Yes/No แบบไหน -- ถอนกลับมาไม่แตะ
-                        # Alert ตัวนี้ตรงนี้ก่อน ปัญหา ElementAmbiguousError
-                        # เดิมยังไม่ได้แก้ 100% รอข้อมูลเพิ่มจากผู้ใช้ก่อน
+                        # แก้: เจอสาเหตุจริงของ ElementAmbiguousError แล้ว --
+                        # ไม่เกี่ยวกับ Alert "ทำรายการซ้ำ" เลย (ทดสอบแล้วว่า
+                        # ต่อให้ handle_repeat_transaction_alert() เช็คแล้ว
+                        # ไม่เจอ Alert เลย ก็ยัง error ตัวนี้เหมือนเดิมทุกรอบ)
+                        # สาเหตุจริงคือ title_re="^ไม่$" เดิมไม่ได้ระบุ
+                        # control_type -- ปุ่มทุกปุ่มในแอปนี้มีโครงสร้างซ้อน
+                        # (Button มี Static ลูก auto_id="CaptionTextBlock"
+                        # โชว์ข้อความเดียวกันกับปุ่ม) เลยแมตช์ทั้ง Button เอง
+                        # และ Static ลูกพร้อมกัน กลายเป็น "2 ตัว" เสมอ เพิ่ม
+                        # control_type="Button" กรองเอาแค่ตัว Button ตัด
+                        # ปัญหาซ้อนกับ Static ลูกออกไป
 
                         # สิ้นสุดกระบวนการ
-                        wait_and_click(main_window, title_re=r"^ไม่$")
+                        wait_and_click(
+                            main_window, title_re=r"^ไม่$", control_type="Button"
+                        )
                         time.sleep(0.1)
 
                         # แก้: ตรวจสอบหน้า success จริงก่อนบันทึก log
