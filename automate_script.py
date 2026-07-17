@@ -284,7 +284,7 @@ def handle_dangerous_goods_question(window, timeout=1):
         click_next(window)
 
 
-def handle_postcode_overlap_alert(window, timeout=3):
+def handle_postcode_overlap_alert(window, timeout=5):
     """
     หลังกรอกรหัสไปรษณีย์ที่หน้า "Destination" (EG.Shipping.Destination,
     ช่อง auto_id="PostCodeDestination") บางครั้งรหัสที่พิมพ์ครอบคลุมหลาย
