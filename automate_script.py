@@ -340,12 +340,24 @@ def handle_repeat_transaction_alert(window, timeout=5):
     ทำรายการซ้ำมีไหม ถ้าแถวนั้นไม่มี Alert เลย (เช่นไม่ได้อยู่โหมดทำซ้ำ) จะ
     รอเต็ม 5 วิเปล่าๆ ก่อนถึงจะไปกดกล่องต่อได้ ทั้งที่จริงๆ หน้าเลือกกล่อง
     พร้อมให้กดตั้งนานแล้ว -- เปลี่ยนมา poll สลับเช็คทั้ง Alert และหน้าเลือก
-    กล่อง (BOX_TYPE_AUTO_ID) พร้อมกัน ใครโผล่ก่อนก็ไปทางนั้นทันที ไม่ต้องรอ
-    ครบ timeout ถ้าจริงๆ ไม่มี Alert (ยังคง ceiling 5 วิไว้เผื่อกรณี Alert
-    เด้งช้าจริงๆ ตามที่เคยพิสูจน์มาแล้ว)
+    กล่อง (BOX_TYPE_AUTO_ID) พร้อมกัน
+
+    แก้อีกรอบ: การ poll แบบ "เจอหน้ากล่องก็ข้ามทันที" ด้านบน กลับกลายเป็นบั๊ก
+    ใหม่ -- ผู้ใช้ทดสอบจริงเจอว่าบางแถวหน้ากล่อง (โครงหน้าเดิมที่ยังโหลดค้าง
+    อยู่จากรายการก่อนหน้า) ปรากฏ "exists visible" เร็วกว่า Alert จริงๆ จะเด้ง
+    ขึ้นมาซ้อนทับ (ตรงกับที่คอมเมนต์เดิมด้านบนบอกว่า Alert นี้เด้งช้ากว่าที่
+    คิด) ทำให้โค้ดสรุปผิดว่า "ไม่มี Alert" แล้วรีบกดกล่องไปเลย พลาด Alert
+    ทำรายการซ้ำไปทั้งที่จริงๆ มี กลายเป็นเลือกทุกอย่างใหม่ตั้งแต่ต้น (ช้ากว่า
+    เดิม ไม่ใช่เร็วกว่า) -- แก้ด้วยการไม่เชื่อสัญญาณ "เจอหน้ากล่องแล้ว"
+    ทันทีที่เจอครั้งแรก ต้องเห็นหน้ากล่อง "ต่อเนื่อง" โดยไม่มี Alert โผล่มา
+    แทรกอย่างน้อย settle_seconds วินาที ก่อนถึงจะเชื่อว่าไม่มี Alert จริงๆ
+    (ถ้า Alert โผล่มาแทรกทีหลังระหว่างรอ จะรีเซ็ตตัวจับเวลาใหม่ทันที)
     """
     poll_interval = 0.3
+    settle_seconds = 1.5
     deadline = time.time() + timeout
+    box_seen_without_alert_since = None
+
     while time.time() < deadline:
         if is_control_visible(
             window,
@@ -367,8 +379,17 @@ def handle_repeat_transaction_alert(window, timeout=5):
             auto_id=BOX_TYPE_AUTO_ID,
             control_type="ListItem",
         ):
-            print("[DEBUG] ไม่มี Alert ทำรายการซ้ำ (ถึงหน้าเลือกกล่องแล้ว) -> ข้าม")
-            return
+            if box_seen_without_alert_since is None:
+                box_seen_without_alert_since = time.time()
+            elif time.time() - box_seen_without_alert_since >= settle_seconds:
+                print(
+                    f"[DEBUG] ไม่มี Alert ทำรายการซ้ำ (เห็นหน้าเลือกกล่องต่อเนื่อง "
+                    f"{settle_seconds} วิแล้วไม่มี Alert แทรก) -> ข้าม"
+                )
+                return
+        else:
+            # หน้ากล่องหายไป (เช่น Alert เพิ่งมาบังทีหลัง) -> รีเซ็ตตัวจับเวลา
+            box_seen_without_alert_since = None
 
 
 def handle_dangerous_goods_question(window, timeout=1.5):
