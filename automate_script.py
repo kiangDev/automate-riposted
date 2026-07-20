@@ -334,19 +334,41 @@ def handle_repeat_transaction_alert(window, timeout=5):
 
     ถ้าไม่เจอ Alert (เช่น รายการแรกสุดของรัน ยังไม่มีรายการก่อนหน้าให้ทำซ้ำ)
     ข้ามไปเงียบๆ ไม่ throw
+
+    แก้: ผู้ใช้สังเกตว่าหน้าเลือกกล่อง (BOX_TYPE_AUTO_ID) กว่าจะกดติดช้ามาก
+    -- สาเหตุคือ is_control_visible(timeout=5) เดิม เช็คแค่ว่า Alert
+    ทำรายการซ้ำมีไหม ถ้าแถวนั้นไม่มี Alert เลย (เช่นไม่ได้อยู่โหมดทำซ้ำ) จะ
+    รอเต็ม 5 วิเปล่าๆ ก่อนถึงจะไปกดกล่องต่อได้ ทั้งที่จริงๆ หน้าเลือกกล่อง
+    พร้อมให้กดตั้งนานแล้ว -- เปลี่ยนมา poll สลับเช็คทั้ง Alert และหน้าเลือก
+    กล่อง (BOX_TYPE_AUTO_ID) พร้อมกัน ใครโผล่ก่อนก็ไปทางนั้นทันที ไม่ต้องรอ
+    ครบ timeout ถ้าจริงๆ ไม่มี Alert (ยังคง ceiling 5 วิไว้เผื่อกรณี Alert
+    เด้งช้าจริงๆ ตามที่เคยพิสูจน์มาแล้ว)
     """
-    if is_control_visible(
-        window,
-        timeout=timeout,
-        auto_id=REPEAT_TRANSACTION_ALERT_YES_AUTO_ID,
-        control_type="Button",
-    ):
-        print("[DEBUG] พบ Alert ยืนยันทำรายการซ้ำ -> ตอบ 'Yes' (ใช้ข้อมูลเดิม)")
-        wait_and_click(
+    poll_interval = 0.3
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if is_control_visible(
             window,
+            timeout=poll_interval,
             auto_id=REPEAT_TRANSACTION_ALERT_YES_AUTO_ID,
             control_type="Button",
-        )
+        ):
+            print("[DEBUG] พบ Alert ยืนยันทำรายการซ้ำ -> ตอบ 'Yes' (ใช้ข้อมูลเดิม)")
+            wait_and_click(
+                window,
+                auto_id=REPEAT_TRANSACTION_ALERT_YES_AUTO_ID,
+                control_type="Button",
+            )
+            return
+
+        if is_control_visible(
+            window,
+            timeout=poll_interval,
+            auto_id=BOX_TYPE_AUTO_ID,
+            control_type="ListItem",
+        ):
+            print("[DEBUG] ไม่มี Alert ทำรายการซ้ำ (ถึงหน้าเลือกกล่องแล้ว) -> ข้าม")
+            return
 
 
 def handle_dangerous_goods_question(window, timeout=1.5):
@@ -640,6 +662,33 @@ def search_and_select_address(
                 # หายไปก่อน ไม่งั้นช่องกรอกจะยัง disabled อยู่จริง (ยืนยันจาก
                 # controls dump จริงแล้ว) พิมพ์คำนี้ไม่ติด -> ElementNotEnabled
                 wait_for_loading_overlay_to_clear(window)
+
+                # แก้: ผู้ใช้ยืนยันแล้วว่าหลัง recover_address_search_page()
+                # (Previous+กลับเข้าหน้าใหม่) บางครั้ง API ค้นหาที่อยู่รอบแรก
+                # จริงๆ ไม่ได้ล้มเหลวจริง แค่ตอบช้าจนแอปขึ้น Alert
+                # "เชื่อมต่อไม่ได้" ไปก่อน -- ผลลัพธ์จริงมาถึงและค้างอยู่ใน
+                # AddressResult แล้ว แต่โค้ดเดิมไม่เคยเช็คตรงนี้ก่อน มัวแต่
+                # พิมพ์ค้นหาคำเดิมซ้ำอีกรอบ (fill_edit หาช่องกรอกอยู่เรื่อยๆ
+                # ทั้งที่จริงๆ มีผลลัพธ์ให้เลือกอยู่แล้ว) เช็คก่อนตรงนี้เลย
+                # ถ้ามีผลลัพธ์อยู่แล้วเลือกเลย ไม่ต้องพิมพ์ซ้ำให้เสียเวลา
+                if is_control_visible(
+                    window, timeout=1, auto_id="AddressResult", control_type="Group"
+                ):
+                    address_result_group = window.child_window(
+                        auto_id="AddressResult", control_type="Group"
+                    )
+                    first_address_result = address_result_group.child_window(
+                        control_type="ListItem", found_index=0
+                    )
+                    if is_control_visible(
+                        address_result_group, timeout=1, control_type="ListItem", found_index=0
+                    ):
+                        first_address_result.wrapper_object().click_input()
+                        print(
+                            "[DEBUG] พบผลลัพธ์ที่อยู่ค้างอยู่แล้ว (API ตอบช้ามาทีหลัง) "
+                            "-> เลือกตัวแรกเลย ไม่พิมพ์ค้นหาซ้ำ"
+                        )
+                        return True
 
                 # แก้: force_type_keys=True เพราะช่องนี้เป็น search-as-you-type
                 # ถ้าใช้ set_edit_text() (ตั้งค่าตรงผ่าน UIA ไม่ใช่จำลอง
