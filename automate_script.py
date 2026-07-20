@@ -1115,6 +1115,32 @@ def main():
                         main_window.wait("exists visible", timeout=5)
                         main_window.set_focus()
 
+                        # แก้: ผู้ใช้รายงานว่าบางครั้งกดปุ่ม "Shipping"/"หน้าหลัก"
+                        # (HOME_AUTO_ID) ไม่ติดเลย เหมือน Alert ทำรายการซ้ำ
+                        # (ConfirmNexModeAlert) ค้างขึ้นมาบังหน้าเมนูหลักอยู่
+                        # ก่อนแล้ว (จากรายการก่อนหน้าที่เพิ่งพิมพ์เสร็จ) --
+                        # ของเดิมเช็ค Alert นี้แค่ "หลัง" กด Home เท่านั้น ถ้า
+                        # จริงๆ Alert ขึ้นมาก่อนกด Home ไปแล้ว การคลิก Home
+                        # อาจไปโดน Alert แทน ทำให้ไม่ตอบอะไรทั้ง Alert และไม่
+                        # ได้ไปหน้าถัดไปเลย เช็คแบบเบาๆ (timeout สั้น เพราะ
+                        # เป็นแค่การป้องกันเผื่อไว้ ไม่ใช่จุดตรวจหลัก) ก่อนกด
+                        # Home ด้วยอีกชั้น
+                        if is_control_visible(
+                            main_window,
+                            timeout=1,
+                            auto_id=REPEAT_TRANSACTION_ALERT_YES_AUTO_ID,
+                            control_type="Button",
+                        ):
+                            print(
+                                "[DEBUG] พบ Alert ทำรายการซ้ำค้างอยู่ก่อนกด Home "
+                                "-> ตอบ 'Yes' ก่อน"
+                            )
+                            wait_and_click(
+                                main_window,
+                                auto_id=REPEAT_TRANSACTION_ALERT_YES_AUTO_ID,
+                                control_type="Button",
+                            )
+
                         # หน้าเริ่มต้น (แก้: ใช้ auto_id แทน title ภาษาไทยที่เพี้ยน
                         # และผ่อนเงื่อนไขเป็น exists+visible เพราะ ListItem
                         # ในแอปนี้ไม่รายงานสถานะ enabled ผ่าน UI Automation)
