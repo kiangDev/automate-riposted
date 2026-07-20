@@ -546,6 +546,12 @@ def search_and_select_address(window, primary_search_term, timeout_per_try=7):
         except Exception as error:
             last_error = error
             print(f"[DEBUG] ค้นหาที่อยู่ด้วยคำว่า {term!r} ไม่เจอผลลัพธ์ ลองคำถัดไป")
+            # แก้: เจอจริงว่าถ้าลองคำค้นหาติดกันเร็วเกินไปหลังไม่เจอผลลัพธ์
+            # ช่องค้นหาจะเข้าสถานะ disabled ชั่วคราว ทำให้พิมพ์คำถัดไปไม่ติด
+            # เลย (ElementNotEnabled) แทนที่จะแค่ "ไม่เจอผลลัพธ์" แบบปกติ พัก
+            # สั้นๆ ก่อนลองคำถัดไป ให้ UI settle ก่อน (จ่ายแค่ตอนคำแรกๆ ไม่เจอ
+            # ผลลัพธ์เท่านั้น ไม่กระทบกรณีปกติที่เจอผลลัพธ์ตั้งแต่คำแรก)
+            time.sleep(0.5)
 
     print(f"[ERROR] ลองค้นหาที่อยู่ทุกคำใน {search_terms} แล้วไม่เจอผลลัพธ์เลย")
     if last_error:
