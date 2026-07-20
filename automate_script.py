@@ -560,6 +560,34 @@ def handle_address_search_failed_alert(window, timeout=2):
     return False
 
 
+def recover_address_search_page(window):
+    """
+    แก้: ผู้ใช้ยืนยันซ้ำหลายรอบแล้วว่ากด "ตกลง" ปิด Alert
+    "ไม่สามารถเชื่อมต่อระบบได้" (ปุ่ม ENTER) อย่างเดียวไม่พอ -- ช่องกรอก
+    ที่อยู่จะยังพิมพ์ไม่ติด ต้องกด "ย้อนกลับ" (ESC/PREVIOUS_AUTO_ID) แล้ว
+    กลับเข้าหน้านี้ใหม่อีกครั้ง (ถัดไป) ถึงจะพิมพ์ได้ปกติ -- จำลองขั้นตอน
+    เดียวกับที่ผู้ใช้ทำด้วยมือทุกครั้ง (Enter ปิด Alert -> Esc ย้อนกลับ ->
+    กลับเข้าหน้าเดิม) เป็นฟังก์ชันแยก ให้เรียกทันทีหลัง
+    handle_address_search_failed_alert() คืน True
+
+    หมายเหตุ: ยังไม่มี control dump ยืนยัน 100% ว่า PREVIOUS_AUTO_ID บนหน้า
+    ค้นหาที่อยู่จะพากลับไปหน้าไหน เผื่อไว้ด้วยการเรียก
+    handle_customer_capture_postal_code_alert() ก่อน click_next_verified()
+    เหมือนลูป "กดถัดไป 3 รอบ" ใน main() เพราะอาจต้องผ่านหน้านั้นอีกรอบ
+    """
+    print("[DEBUG] กด Esc ย้อนกลับแล้วกลับเข้าหน้าค้นหาที่อยู่ใหม่ (ตามที่ผู้ใช้ยืนยันว่าจำเป็น)")
+    try:
+        wait_and_click(
+            window, auto_id=PREVIOUS_AUTO_ID, control_type="Button", timeout=3
+        )
+    except Exception as error:
+        print(f"[WARNING] กดย้อนกลับไม่สำเร็จ: {error}")
+        return
+
+    handle_customer_capture_postal_code_alert(window)
+    click_next_verified(window)
+
+
 def search_and_select_address(
     window, primary_search_term, timeout_per_try=7, max_retries_per_term=2
 ):
@@ -600,6 +628,15 @@ def search_and_select_address(
                     force_type_keys=True,
                 )
 
+                # แก้: ช่องนี้เป็น search-as-you-type ยิง API ทุกตัวอักษร
+                # ที่พิมพ์ -- เจอจริงจากรูปที่ผู้ใช้ส่งมาว่า Alert
+                # "ไม่สามารถเชื่อมต่อระบบได้" ขึ้นได้ตั้งแต่ตอน "กำลังพิมพ์"
+                # เลย (ไม่ต้องรอกด "ถัดไป" ก่อน) เช็คตรงนี้ด้วย ก่อนกด
+                # "ถัดไป" ไม่งั้นจะพลาด Alert ที่ขึ้นระหว่างพิมพ์ไปเลย
+                if handle_address_search_failed_alert(window):
+                    recover_address_search_page(window)
+                    continue
+
                 # แก้: พิมพ์คำค้นหาอย่างเดียวไม่พอ ต้องกด "ถัดไป"/submit ก่อน
                 # หน้าผลลัพธ์ถึงจะขึ้น (ผู้ใช้ทดสอบด้วยมือแล้วยืนยันตรงนี้)
                 click_next(window)
@@ -610,6 +647,7 @@ def search_and_select_address(
                 # คำเดิมทันที ไม่ต้องรอ except/timeout ก่อน
                 wait_for_loading_overlay_to_clear(window)
                 if handle_address_search_failed_alert(window):
+                    recover_address_search_page(window)
                     continue
 
                 address_result_group = window.child_window(
@@ -632,6 +670,15 @@ def search_and_select_address(
                     f"[DEBUG] ค้นหาที่อยู่ด้วยคำว่า {term!r} ไม่เจอผลลัพธ์ "
                     f"(ครั้งที่ {attempt}/{max_retries_per_term + 1})"
                 )
+                # แก้: ถ้า error เกิดเพราะ Alert "ไม่สามารถเชื่อมต่อระบบได้"
+                # ไปบัง element ระหว่าง fill_edit/click_next (เช่น
+                # type_keys โฟกัสหลุดเพราะ Alert แทรกขึ้นมากลางคัน) ต้องเช็ค
+                # +ปิด Alert ตรงนี้ด้วย ไม่งั้นรอบถัดไปจะเจอ Alert เดิมค้าง
+                # อยู่ ชนกันไปเรื่อยๆ ไม่มีวันหลุด (นี่คือสาเหตุจริงที่ผู้ใช้
+                # ต้องกด Enter+Esc เองตลอด เพราะจุดเช็คเดิมมีแค่หลังกด
+                # "ถัดไป" จุดเดียว พลาด Alert ที่ขึ้นระหว่างพิมพ์/จุดอื่นไป)
+                if handle_address_search_failed_alert(window):
+                    recover_address_search_page(window)
                 dump_controls_on_failure(window, f"address_search_{term}_{attempt}")
 
     print(f"[ERROR] ลองค้นหาที่อยู่ทุกคำใน {search_terms} แล้วไม่เจอผลลัพธ์เลย")
