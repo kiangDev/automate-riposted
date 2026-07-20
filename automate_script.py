@@ -349,11 +349,22 @@ def handle_repeat_transaction_alert(window, timeout=5):
         )
 
 
-def handle_dangerous_goods_question(window, timeout=5):
+def handle_dangerous_goods_question(window, timeout=1.5):
     """
     หน้าคำถามสินค้าอันตราย (EG.Shipping.DangerousGoodsQuestion) จะแทรกโผล่มา
     หลังเลือกกล่องเสร็จ ไม่ได้โผล่ทุกครั้งแน่นอน (ยังไม่ยืนยัน) เลยเช็คก่อนว่า
     เจอปุ่ม "Confirmed" ไหม ถ้าไม่เจอภายใน timeout สั้นๆ ก็ข้ามไปเงียบๆ ไม่ throw
+
+    แก้: เจอบั๊กสำคัญ -- is_control_visible()/.wait() ของ pywinauto ถ้า
+    control ไม่ปรากฏจริง จะ "รอเต็ม timeout เสมอ" ก่อนถึงจะ timeout ออกมา
+    (ต่างจากตอนรอ control ที่คาดว่าจะเจอเร็ว ซึ่งรอเท่าที่ใช้จริงแล้ว return
+    ทันที) เดิม timeout=5 ตรงนี้ ถ้าหน้านี้ไม่โผล่มา (ซึ่งหลังตอบ "Yes" ที่
+    Alert ทำรายการซ้ำแล้ว หน้านี้จะถูกข้ามไปเลยตามคอมเมนต์ที่
+    REPEAT_TRANSACTION_ALERT_YES_AUTO_ID) จะเสียเวลาเปล่า 5 วิทุกแถวโดยไม่รู้
+    ตัว -- นี่คือสาเหตุหลักจริงๆ ที่ทำให้รู้สึกช้าเท่าพิมพ์เอง ลดเหลือ 1.5 วิ
+    ถ้าจริงๆ แล้วหน้านี้เคยต้องใช้เวลานานกว่านี้กว่าจะโผล่ กรณีนั้น
+    recover_ui() (ที่ปรับปรุงแล้วให้ลอง ENTER/Home/ESC วนหลายรอบ) จะดักคืน
+    สถานะให้แทน ไม่ทำให้สคริปต์ตายทั้งตัว
     """
     if is_control_visible(
         window, timeout=timeout, auto_id=DANGEROUS_GOODS_ANSWER_AUTO_ID, control_type="Button"
@@ -364,11 +375,16 @@ def handle_dangerous_goods_question(window, timeout=5):
         click_next(window)
 
 
-def handle_postcode_overlap_alert(window, timeout=5):
+def handle_postcode_overlap_alert(window, timeout=1.5):
     """
     หลังกรอกรหัสไปรษณีย์ที่หน้า "Destination" (EG.Shipping.Destination,
     ช่อง auto_id="PostCodeDestination") บางครั้งรหัสที่พิมพ์ครอบคลุมหลาย
     พื้นที่ จะมี Alert แทรกขึ้นมา
+
+    แก้: ลด timeout จาก 5 เหลือ 1.5 -- เหตุผลเดียวกับ
+    handle_dangerous_goods_question() (ดูคอมเมนต์ที่นั่นแบบเต็ม) Alert นี้
+    ไม่ได้ขึ้นทุกแถว (แค่รหัสไปรษณีย์ที่ครอบคลุมหลายพื้นที่เท่านั้น) แถวที่
+    ไม่ขึ้นจะเสียเวลาเปล่ารอเต็ม timeout ทุกครั้งถ้าตั้งไว้สูง
 
     แก้: ยืนยันจาก controls dump จริงของ Alert นี้แล้ว 100% (ผู้ใช้ส่งมาตอน
     Alert กำลังโชว์อยู่จริง) นี่คือ Alert คนละตัวกับ
@@ -391,7 +407,7 @@ def handle_postcode_overlap_alert(window, timeout=5):
         
 
 
-def handle_customer_capture_postal_code_alert(window, timeout=8):
+def handle_customer_capture_postal_code_alert(window, timeout=2):
     """
     Alert คนละตัวกับ handle_postcode_overlap_alert() ด้านบน -- ตัวนี้โผล่
     ขึ้นมาที่หน้า "ข้อมูลผู้ส่ง/ผู้รับ" (EG.CustomerCapture.CustomerCaptureView)
@@ -406,6 +422,15 @@ def handle_customer_capture_postal_code_alert(window, timeout=8):
     เรียกใช้ตรงช่วง "3x click_next" ก่อนเข้าหน้าค้นหาที่อยู่ เพราะ Alert นี้
     คือสาเหตุที่แท้จริงของหน้า "ข้อมูลผู้ส่ง" ที่เคยค้าง (กด Submit ไม่ติด
     เพราะโดน Alert บังอยู่) -- เช็คแบบเบาๆ ไม่เจอก็ข้ามไปเงียบๆ ไม่ throw
+
+    แก้: เดิมตั้ง timeout=8 ตามที่ผู้ใช้ขอเพิ่มไว้ก่อนหน้านี้ (กลัวเช็คไม่ทัน)
+    แต่เพิ่งพบว่าฟังก์ชันนี้ถูกเรียกใน main() สูงสุด 3 รอบต่อแถว (ลูป "กด
+    ถัดไป 3 รอบ") และ is_control_visible() ถ้า Alert ไม่ปรากฏจริง จะรอเต็ม
+    timeout เสมอก่อนถึงจะรู้ว่าไม่เจอ -- แถวที่ไม่เจอ Alert นี้เลย (ซึ่งควร
+    เป็นแถวส่วนใหญ่) จะเสียเวลาเปล่าได้สูงสุดถึง 8x3=24 วิ/แถว โดยไม่รู้ตัว
+    ลดเหลือ 2 วิ ลดความเสี่ยงเสียเวลาเปล่าลงมาก ถ้า Alert จริงๆ ต้องใช้เวลา
+    นานกว่า 2 วิกว่าจะโผล่ (กรณีหายาก) recover_ui() ที่ปรับปรุงแล้วจะดักคืน
+    สถานะให้แทนไม่ทำให้พังทั้งตัว
     """
     if is_control_visible(
         window,
@@ -1005,6 +1030,11 @@ def main():
                         continue
 
                     print(f"--- กำลังทำรายการที่ {index}: {first_name} {last_name} ---")
+                    # แก้: จับเวลาจริงต่อแถว เพื่อให้มีตัวเลขจริงเทียบกับที่
+                    # ผู้ใช้จับเวลาด้วยตัวเองว่าช้ากว่าเพื่อน 3 เท่า -- ของเดิม
+                    # ไม่มี timestamp ใน log เลย เดาไม่ได้ว่าจริงๆ แถวไหนช้า
+                    # เพราะอะไร (retry ที่อยู่? รอ overlay? หรือจุดอื่น?)
+                    row_start_time = time.time()
 
                     try:
                         # แก้: ลด "enabled" ออก เหลือแค่ "exists visible"
@@ -1223,9 +1253,11 @@ def main():
                             f"ทำรายการที่ {index} สำเร็จ และบันทึกลง Log แล้ว "
                             f"(เลขพัสดุ: {tracking_number or 'ไม่พบ'})"
                         )
+                        print(f"[TIMING] รายการที่ {index} ใช้เวลา {time.time() - row_start_time:.1f} วิ")
 
                     except PywinautoTimeoutError:
                         print(f"Timeout ที่รายการ {index}: {first_name} {last_name}")
+                        print(f"[TIMING] รายการที่ {index} ใช้เวลา {time.time() - row_start_time:.1f} วิ (fail)")
                         traceback.print_exc()
                         if not recover_ui(main_window):
                             print("[FATAL] หยุดสคริปต์เพราะกู้คืนหน้าจอไม่สำเร็จ")
@@ -1236,6 +1268,7 @@ def main():
                         print(f"เกิดข้อผิดพลาดที่รายการ {index}: {first_name} {last_name}")
                         print(f"ชนิด Error: {type(error).__name__}")
                         print(f"รายละเอียด: {error}")
+                        print(f"[TIMING] รายการที่ {index} ใช้เวลา {time.time() - row_start_time:.1f} วิ (fail)")
                         traceback.print_exc()
                         if not recover_ui(main_window):
                             print("[FATAL] หยุดสคริปต์เพราะกู้คืนหน้าจอไม่สำเร็จ")
