@@ -1262,6 +1262,15 @@ def main():
                         # ทุกรหัสไปรษณีย์)
                         search_and_select_address(main_window, address_search)
                         click_next(main_window)
+                        # แก้: เพิ่ม checkpoint หา timeline ละเอียดขึ้น -- เจอ
+                        # แถวที่รวมช้า 78 วิ แต่ error ท้ายๆ ใช้แค่ 5 วิ ไม่รู้
+                        # ว่า 73 วิที่หายไปอยู่ตรงไหน (เพราะ [TIMING] เดิมมีแค่
+                        # ต่อแถว ไม่มีต่อ step) ใส่ checkpoint นี้ไว้แยกว่าช่วง
+                        # "ค้นหาที่อยู่" ใช้เวลาเท่าไหร่
+                        print(
+                            f"[TIMING-CHECKPOINT] หลังค้นหาที่อยู่เสร็จ "
+                            f"ผ่านไป {time.time() - row_start_time:.1f} วิ (นับจากเริ่มแถว)"
+                        )
 
                         # ข้อมูลผู้รับ
                         # แก้: เจอจาก controls dump จริงของหน้านี้
@@ -1310,6 +1319,10 @@ def main():
                         # dump จริงแล้วว่าหน้านี้มีปุ่ม LocalCommand_Submit)
                         click_next(main_window)
                         report_validation_errors(main_window)
+                        print(
+                            f"[TIMING-CHECKPOINT] หลังกรอกข้อมูลผู้รับ+submit เสร็จ "
+                            f"ผ่านไป {time.time() - row_start_time:.1f} วิ (นับจากเริ่มแถว)"
+                        )
 
                         # สิ้นสุดกระบวนการ
                         # แก้: ต้องมี control_type="Button" เสมอ -- ไม่งั้น
