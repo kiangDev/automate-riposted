@@ -1,6 +1,7 @@
 import csv
 import os
 import re
+import sys
 import time
 import traceback
 
@@ -86,6 +87,14 @@ LOADING_OVERLAY_AUTO_ID = "Standard.TaskPleaseWait"
 # ที่อยู่ของแอปเองล้มเหลว/timeout ไม่ใช่ปัญหาคำค้นที่พิมพ์ผิด
 ADDRESS_SEARCH_FAILED_ALERT_AUTO_ID = "EG.CustomerCapture.AddressSearchFailed"
 ADDRESS_SEARCH_FAILED_ACCEPT_AUTO_ID = "AcceptButton"
+
+# แก้: auto_id ของหน้าค้นหาที่อยู่ (ยืนยันจาก control dump จริงที่ผู้ใช้ส่ง
+# มา: child_window(title="Main", auto_id="EG.CustomerCapture.
+# AddressSearchInputView", control_type="Custom")) ใช้เช็คว่าถึงหน้านี้
+# หรือยัง เพื่อออกจากลูป "กดถัดไป 3 รอบ" ใน main() เร็วขึ้นถ้าหน้า
+# "ข้อมูลผู้ส่ง" ที่แทรกมาบางครั้งไม่ปรากฏ (ของเดิมกดครบ 3 รอบเสมอไม่ว่า
+# จะถึงหน้านี้ตั้งแต่รอบแรกแล้วหรือไม่ เสียเวลาโดยไม่จำเป็นทุกแถว)
+ADDRESS_SEARCH_INPUT_AUTO_ID = "EG.CustomerCapture.AddressSearchInputView"
 
 # ปุ่มเลือกกล่องสำเร็จรูป "ข" ที่หน้า MailPieceShape
 # ยืนยันแล้วจาก controls dump จริง (dump.txt): tile "กล่องสำเร็จรูป ข" คือ
@@ -774,8 +783,17 @@ def capture_tracking_number(window, timeout=5):
 
 def recover_ui(main_window, max_attempts=5):
     """
-    พยายามกลับสู่หน้าแรก โดยลองกดปุ่ม "หน้าหลัก" (LocalCommand_Home) ก่อน
-    เพราะน่าเชื่อถือกว่าการกด ESC วนหลายรอบ ถ้าไม่สำเร็จค่อย fallback เป็น ESC
+    พยายามกลับสู่หน้าแรก
+
+    แก้: ของเดิมลองกดปุ่ม "หน้าหลัก" ครั้งเดียว แล้วค่อย fallback เป็น ESC
+    ล้วนๆ วนหลายรอบ -- ปัญหาคือถ้ามี Alert ค้างอยู่ (เช่น
+    EG.CustomerCapture.AddressSearchFailed ที่ต้องกด "ตกลง"/ENTER ก่อนถึง
+    จะปิดได้ ยืนยันจาก control dump จริงแล้ว หรือ Alert อื่นที่ยังไม่เจอ
+    auto_id) ปุ่มหน้าหลักและ ESC จะกดไม่ติดเลยเพราะ Alert บังอยู่ ทำให้
+    recover_ui() ล้มเหลวทั้งที่จริงๆ กดปิด Alert ตัวเดียวก็กลับมาได้แล้ว
+    -- เปลี่ยนมาวนแต่ละรอบให้กด ENTER ก่อนเสมอ (ปิด Alert ที่มีปุ่ม default
+    เป็น accept) แล้วค่อยลองปุ่มหน้าหลัก แล้วค่อย ESC ในรอบเดียวกัน เพิ่ม
+    โอกาสกู้คืนสำเร็จโดยไม่ต้องรู้ auto_id ของทุก Alert ที่เป็นไปได้ล่วงหน้า
     """
     print("[DEBUG] กำลังพยายามกู้คืนหน้าจอ")
 
@@ -784,30 +802,10 @@ def recover_ui(main_window, max_attempts=5):
     except Exception:
         pass
 
-    # วิธีที่ 1: กดปุ่ม "หน้าหลัก" โดยตรง
-    try:
-        home_button = main_window.child_window(
-            auto_id=HOME_BUTTON_AUTO_ID, control_type="Button"
-        )
-        home_button.wait("exists visible", timeout=2)
-        home_button.wrapper_object().click_input()
-        
-
-        if is_control_visible(
-            main_window,
-            timeout=3,
-            auto_id=HOME_AUTO_ID,
-            control_type=HOME_CONTROL_TYPE,
-        ):
-            print("[DEBUG] กลับมาหน้าแรกสำเร็จ (ผ่านปุ่มหน้าหลัก)")
-            return True
-    except Exception as error:
-        print(f"[DEBUG] กดปุ่มหน้าหลักไม่สำเร็จ: {error}")
-
-    # วิธีที่ 2: fallback เป็นการกด ESC วนหลายรอบ
     for attempt in range(1, max_attempts + 1):
-        send_keys("{ESC}")
-        
+        # แก้: กด ENTER ก่อนทุกรอบ เผื่อมี Alert ค้างปุ่ม default (accept)
+        # บังปุ่มหน้าหลัก/ESC อยู่ (เช่น AddressSearchFailed Alert)
+        send_keys("{ENTER}")
 
         if is_control_visible(
             main_window,
@@ -815,11 +813,42 @@ def recover_ui(main_window, max_attempts=5):
             auto_id=HOME_AUTO_ID,
             control_type=HOME_CONTROL_TYPE,
         ):
-            print(f"[DEBUG] กลับมาหน้าแรกสำเร็จ (ESC ครั้งที่ {attempt})")
+            print(f"[DEBUG] กลับมาหน้าแรกสำเร็จ (ENTER ปิด Alert, รอบที่ {attempt})")
+            return True
+
+        # ลองกดปุ่ม "หน้าหลัก" โดยตรง
+        try:
+            home_button = main_window.child_window(
+                auto_id=HOME_BUTTON_AUTO_ID, control_type="Button"
+            )
+            home_button.wait("exists visible", timeout=2)
+            home_button.wrapper_object().click_input()
+
+            if is_control_visible(
+                main_window,
+                timeout=2,
+                auto_id=HOME_AUTO_ID,
+                control_type=HOME_CONTROL_TYPE,
+            ):
+                print(f"[DEBUG] กลับมาหน้าแรกสำเร็จ (ปุ่มหน้าหลัก, รอบที่ {attempt})")
+                return True
+        except Exception as error:
+            print(f"[DEBUG] กดปุ่มหน้าหลักไม่สำเร็จ (รอบที่ {attempt}): {error}")
+
+        # fallback เป็นการกด ESC
+        send_keys("{ESC}")
+
+        if is_control_visible(
+            main_window,
+            timeout=1,
+            auto_id=HOME_AUTO_ID,
+            control_type=HOME_CONTROL_TYPE,
+        ):
+            print(f"[DEBUG] กลับมาหน้าแรกสำเร็จ (ESC, รอบที่ {attempt})")
             return True
 
     print(
-        "[ERROR] กู้คืนหน้าจอไม่สำเร็จ ไม่พบหน้าแรกหลังลองทั้งปุ่มหน้าหลักและ ESC "
+        "[ERROR] กู้คืนหน้าจอไม่สำเร็จ ไม่พบหน้าแรกหลังลองทั้ง ENTER/ปุ่มหน้าหลัก/ESC "
         f"{max_attempts} ครั้ง -- ควรหยุดสคริปต์และตรวจสอบหน้าจอด้วยตนเอง"
     )
     return False
@@ -869,12 +898,12 @@ def main():
             "หน้าต่างเดียว แล้วรันสคริปต์ใหม่"
         )
         traceback.print_exc()
-        return
+        return False
 
     except Exception:
         print("เชื่อมต่อโปรแกรมไม่ได้ กรุณาตรวจสอบว่าเปิด Riposte อยู่")
         traceback.print_exc()
-        return
+        return False
 
     print(f"กำลังเปิดไฟล์ข้อมูล {CSV_FILENAME}...")
 
@@ -1031,6 +1060,18 @@ def main():
                             handle_customer_capture_postal_code_alert(main_window)
                             click_next_verified(main_window)
 
+                            # แก้: ของเดิมกดครบ 3 รอบเสมอไม่ว่าจะถึงหน้า
+                            # ค้นหาที่อยู่แล้วหรือยัง (หน้า "ข้อมูลผู้ส่ง"
+                            # ที่แทรกมาบางครั้งไม่ปรากฏทุกแถว) เช็คว่าถึง
+                            # หน้าค้นหาที่อยู่แล้วหรือยัง ถ้าถึงแล้วออกจาก
+                            # ลูปทันที ไม่ต้องกดถัดไปต่ออีกโดยไม่จำเป็น
+                            if get_main_pane_auto_id(main_window) == ADDRESS_SEARCH_INPUT_AUTO_ID:
+                                print(
+                                    f"[DEBUG] ถึงหน้าค้นหาที่อยู่แล้วตั้งแต่รอบที่ "
+                                    f"{round_number}/3 -> ข้ามรอบที่เหลือ"
+                                )
+                                break
+
                         # ค้นหาและเลือกที่อยู่ (แก้: ใช้ address_search จาก CSV
                         # เป็นคำค้นหาแรก ถ้าไม่เจอผลลัพธ์ จะไล่ลองคำถัดไปใน
                         # ADDRESS_SEARCH_FALLBACK_CANDIDATES ให้เอง เพราะข้อมูล
@@ -1142,7 +1183,7 @@ def main():
                         if not recover_ui(main_window):
                             print("[FATAL] หยุดสคริปต์เพราะกู้คืนหน้าจอไม่สำเร็จ")
                             write_output_csv(rows, output_fieldnames)
-                            return
+                            return False
 
                     except Exception as error:
                         print(f"เกิดข้อผิดพลาดที่รายการ {index}: {first_name} {last_name}")
@@ -1152,7 +1193,7 @@ def main():
                         if not recover_ui(main_window):
                             print("[FATAL] หยุดสคริปต์เพราะกู้คืนหน้าจอไม่สำเร็จ")
                             write_output_csv(rows, output_fieldnames)
-                            return
+                            return False
 
                 # แก้: เขียน CSV output ครั้งเดียวตอนจบ loop ทั้งหมด (ย้ายมาจาก
                 # ในลูปตามที่ขอ เพื่อ performance -- ไม่ต้องเขียนไฟล์ซ้ำทุกแถว)
@@ -1160,19 +1201,29 @@ def main():
 
     except FileNotFoundError:
         print(f"ไม่พบไฟล์ {CSV_FILENAME} กรุณาตรวจสอบว่าไฟล์อยู่ในโฟลเดอร์เดียวกับสคริปต์")
+        return False
 
     except PermissionError:
         print(f"ไม่สามารถเปิดไฟล์ {CSV_FILENAME} ได้ กรุณาปิดไฟล์ใน Excel แล้วลองใหม่")
+        return False
 
     except ValueError as error:
         print(f"โครงสร้าง CSV ไม่ถูกต้อง: {error}")
+        return False
 
     except Exception:
         print("เกิดข้อผิดพลาดขณะอ่านหรือประมวลผลไฟล์ CSV")
         traceback.print_exc()
+        return False
 
     print("เสร็จสิ้นการทำงานทั้งหมดแล้ว!")
+    return True
 
 
 if __name__ == "__main__":
-    main()
+    # แก้: main() ตอนนี้คืนค่า True/False บอกว่าจบครบจริงหรือ crash ระหว่างทาง
+    # (ของเดิม return เฉยๆ ทุกจุด รวมถึงตอน [FATAL] ก็ exit code 0 เหมือนกัน
+    # หมด แยกไม่ออกว่าจบจริงหรือพัง) ใช้ sys.exit() ส่ง exit code ต่างกันไป
+    # ให้ wrapper script (เช่น run_forever.bat) เช็คแล้วตัดสินใจรันซ้ำอัตโนมัติ
+    # ได้เมื่อ crash โดยไม่ต้องมีคนคอยเฝ้า
+    sys.exit(0 if main() else 1)
