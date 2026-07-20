@@ -68,6 +68,15 @@ HOME_CONTROL_TYPE = "ListItem"
 # สำเร็จตัวจริงใน wait_for_success() แทนการเดา SUCCESS_TITLE_RE เดิม
 MAIN_MENU_AUTO_ID = "Menu.MainMenu"
 
+# แก้: ยืนยันจาก controls dump จริงแล้วว่าตอนแอปเรียก API เช็คที่อยู่ (ช้า
+# ตามที่ผู้ใช้สงสัย) จะมี overlay "กรุณารอสักครู่" ขึ้นมาทับหน้าปัจจุบัน --
+# auto_id="Standard.TaskPleaseWait" (พบเป็น pane "Main" อีกตัวซ้อนอยู่พร้อม
+# กับ pane "Main" ของหน้าจริง เท่ากับตอนนี้มี title="Main" 2 ตัวพร้อมกัน
+# get_main_pane_auto_id() แบบเดิมเลยเสี่ยง ambiguous ถ้าเรียกตอน overlay นี้
+# ขึ้นอยู่) ช่องกรอกต่างๆ จะ disabled จริงระหว่างนี้ (ตรงกับ ElementNotEnabled
+# ที่เจอ) ต้องรอให้ overlay นี้หายไปก่อน ค่อยพิมพ์คำค้นหาคำถัดไป
+LOADING_OVERLAY_AUTO_ID = "Standard.TaskPleaseWait"
+
 # ปุ่มเลือกกล่องสำเร็จรูป "ข" ที่หน้า MailPieceShape
 # ยืนยันแล้วจาก controls dump จริง (dump.txt): tile "กล่องสำเร็จรูป ข" คือ
 # hotkey เลข 4 บนหน้าจอ ซึ่งตรงกับ auto_id="MailPieceShape_9"
@@ -510,6 +519,11 @@ def search_and_select_address(window, primary_search_term, timeout_per_try=7):
     for term in search_terms:
         print(f"[DEBUG] กำลังค้นหาที่อยู่ด้วยคำว่า {term!r}")
         try:
+            # แก้: ต้องรอ overlay "กรุณารอสักครู่" จากการค้นหาคำก่อนหน้าให้
+            # หายไปก่อน ไม่งั้นช่องกรอกจะยัง disabled อยู่จริง (ยืนยันจาก
+            # controls dump จริงแล้ว) พิมพ์คำนี้ไม่ติด -> ElementNotEnabled
+            wait_for_loading_overlay_to_clear(window)
+
             # แก้: force_type_keys=True เพราะช่องนี้เป็น search-as-you-type
             # ถ้าใช้ set_edit_text() (ตั้งค่าตรงผ่าน UIA ไม่ใช่จำลอง
             # keyboard event จริง) แอปจะไม่รู้ว่ามีการพิมพ์เกิดขึ้น เลยไม่
@@ -546,12 +560,10 @@ def search_and_select_address(window, primary_search_term, timeout_per_try=7):
         except Exception as error:
             last_error = error
             print(f"[DEBUG] ค้นหาที่อยู่ด้วยคำว่า {term!r} ไม่เจอผลลัพธ์ ลองคำถัดไป")
-            # แก้: เจอจริงว่าถ้าลองคำค้นหาติดกันเร็วเกินไปหลังไม่เจอผลลัพธ์
-            # ช่องค้นหาจะเข้าสถานะ disabled ชั่วคราว ทำให้พิมพ์คำถัดไปไม่ติด
-            # เลย (ElementNotEnabled) แทนที่จะแค่ "ไม่เจอผลลัพธ์" แบบปกติ พัก
-            # สั้นๆ ก่อนลองคำถัดไป ให้ UI settle ก่อน (จ่ายแค่ตอนคำแรกๆ ไม่เจอ
-            # ผลลัพธ์เท่านั้น ไม่กระทบกรณีปกติที่เจอผลลัพธ์ตั้งแต่คำแรก)
-            time.sleep(0.5)
+            # แก้: เดิม sleep คงที่ 0.5 วิตรงนี้ ไม่พอในกรณี API ช้าจริง --
+            # ย้ายไปรอ overlay "กรุณารอสักครู่" หายไปก่อนตอนต้นลูปแทนแล้ว
+            # (wait_for_loading_overlay_to_clear ด้านบน) แม่นกว่าเพราะรอตาม
+            # เวลาจริงที่ API ใช้ ไม่ใช่เดาตัวเลขคงที่
             # แก้: ผู้ใช้ถ่ายรูปเจอ Dialog "คำเตือน: ไม่สามารถเชื่อมต่อระบบ
             # ได้" มาให้ดู -- เป็น error ที่แอป Riposte เองสร้างตอนเรียก API
             # เช็คที่อยู่ไม่สำเร็จ (ไม่ใช่ "ไม่มีที่อยู่ตรงกับเลขที่ค้นหา"
@@ -600,6 +612,32 @@ def is_control_visible(window, timeout=1.5, **criteria):
         return True
     except Exception:
         return False
+
+
+def wait_for_loading_overlay_to_clear(window, timeout=15, poll_interval=0.3):
+    """
+    แก้: รอให้ overlay "กรุณารอสักครู่" (auto_id=LOADING_OVERLAY_AUTO_ID)
+    หายไปก่อน ค่อยไปแตะ control อื่นต่อ -- ยืนยันจาก controls dump จริงแล้ว
+    ว่าตอน API ค้นหาที่อยู่ทำงานอยู่ (ช้าตามที่ผู้ใช้สงสัย) overlay นี้จะขึ้น
+    มาทับ และ control ต่างๆ ของหน้าจะ disabled จริง (ตรงกับ ElementNotEnabled
+    ที่เคยเจอ) ใช้แทนการ sleep คงที่ตัวเดียว เพราะเวลาที่ API ใช้จริงไม่แน่นอน
+    (บางครั้งเร็ว บางครั้งช้ากว่า timeout เดิมที่ตั้งไว้)
+    คืน True เกือบทันที (แค่ต้นทุนของ poll_interval รอบเดียว ~0.3 วิ) ถ้าไม่
+    เจอ overlay อยู่แล้ว (กรณีปกติ แทบไม่กระทบความเร็วเลย)
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if not is_control_visible(
+            window,
+            timeout=poll_interval,
+            auto_id=LOADING_OVERLAY_AUTO_ID,
+            control_type="Custom",
+        ):
+            return True
+        print("[DEBUG] เจอ overlay 'กรุณารอสักครู่' อยู่ -> รอต่อ")
+
+    print("[WARNING] overlay 'กรุณารอสักครู่' ยังไม่หายไปแม้รอครบเวลาแล้ว")
+    return False
 
 
 def write_output_csv(rows, fieldnames, filename=OUTPUT_CSV_FILENAME):
