@@ -827,7 +827,7 @@ def is_control_visible(window, timeout=1.5, **criteria):
         return False
 
 
-def wait_for_loading_overlay_to_clear(window, timeout=15, poll_interval=0.3):
+def wait_for_loading_overlay_to_clear(window, timeout=6, poll_interval=0.3):
     """
     แก้: รอให้ overlay "กรุณารอสักครู่" (auto_id=LOADING_OVERLAY_AUTO_ID)
     หายไปก่อน ค่อยไปแตะ control อื่นต่อ -- ยืนยันจาก controls dump จริงแล้ว
@@ -837,6 +837,14 @@ def wait_for_loading_overlay_to_clear(window, timeout=15, poll_interval=0.3):
     (บางครั้งเร็ว บางครั้งช้ากว่า timeout เดิมที่ตั้งไว้)
     คืน True เกือบทันที (แค่ต้นทุนของ poll_interval รอบเดียว ~0.3 วิ) ถ้าไม่
     เจอ overlay อยู่แล้ว (กรณีปกติ แทบไม่กระทบความเร็วเลย)
+
+    แก้: ผู้ใช้ส่ง log จริงมาแล้วเจอ timeout=15 (เดิม) โดนใช้เต็มเพดานสองรอบ
+    ติดกัน (attempt 1 และ 2 ของคำค้นเดียวกัน) = เสียเวลาเปล่า 30 วิ จาก 117.8
+    วิที่ใช้ทั้งหมดตอนค้นหาที่อยู่ -- ทั้งที่จริงๆ กลไกสำรองอื่นที่มีอยู่แล้ว
+    (handle_address_search_failed_alert + recover_address_search_page +
+    เช็ค AddressResult ค้างอยู่ตอนต้น attempt ถัดไป) จัดการกรณี API ช้าได้
+    อยู่แล้วโดยไม่ต้องรอ overlay หายเต็มที่ก่อน ลดเหลือ 6 วิ ให้ระบบไปพึ่ง
+    กลไกสำรองเหล่านั้นเร็วขึ้นแทนที่จะรอเปล่าซ้ำสองรอบ
     """
     deadline = time.time() + timeout
     while time.time() < deadline:
@@ -1318,6 +1326,20 @@ def main():
                         # ขั้นตอนนี้ไปเลยกดหา "ไม่" ไม่เจอ (ยืนยันจาก controls
                         # dump จริงแล้วว่าหน้านี้มีปุ่ม LocalCommand_Submit)
                         click_next(main_window)
+
+                        # แก้: ผู้ใช้ส่ง controls_fail_ไม.txt จริงมาแล้ว --
+                        # เจอ Alert เดียวกับ handle_customer_capture_postal_
+                        # code_alert() (auto_id="EG.CustomerCapture.
+                        # PostalCodeAlert", ปุ่ม PostalCodeAlertDeclineCommand/
+                        # AcceptCommand) แต่ขึ้น "ตรงจุดนี้" (หลัง submit หน้า
+                        # ข้อมูลผู้รับ, รหัสไปรษณีย์ 10900 vs ระบบแนะนำ 10906)
+                        # ไม่ใช่แค่ช่วง "3x click_next" ก่อนหน้าที่เดียวตามที่
+                        # เคยคิดไว้ -- ของเดิมเรียกฟังก์ชันนี้แค่จุดเดียว พอ
+                        # Alert ขึ้นมาซ้ำตรงนี้เลยไม่มีใครจัดการ ค้างบังหน้าจอ
+                        # จนหา "ไม่" ไม่เจอ (TimeoutError) เพิ่มเรียกอีกจุดนี้
+                        # ด้วย (กด "ยกเลิก" คงรหัสเดิมเหมือนเดิม)
+                        handle_customer_capture_postal_code_alert(main_window)
+
                         report_validation_errors(main_window)
                         print(
                             f"[TIMING-CHECKPOINT] หลังกรอกข้อมูลผู้รับ+submit เสร็จ "
