@@ -77,6 +77,16 @@ MAIN_MENU_AUTO_ID = "Menu.MainMenu"
 # ที่เจอ) ต้องรอให้ overlay นี้หายไปก่อน ค่อยพิมพ์คำค้นหาคำถัดไป
 LOADING_OVERLAY_AUTO_ID = "Standard.TaskPleaseWait"
 
+# แก้: ผู้ใช้ส่ง control dump จริงมาแล้ว เจอ Alert "คำเตือน: ไม่สามารถ
+# เชื่อมต่อระบบได้" ตอนค้นหาที่อยู่ auto_id จริงคือ
+# "EG.CustomerCapture.AddressSearchFailed" (control_type="Custom") และปุ่ม
+# "ตกลง" คือ auto_id="AcceptButton" (hotkey ENTER) -- นี่คือสาเหตุจริงของที่
+# ผู้ใช้ต้องกด Enter (ปิด Alert นี้) แล้วกด Esc (auto_id=PREVIOUS_AUTO_ID,
+# ย้อนกลับไปหน้าก่อน) เพื่อกลับมากรอกคำค้นใหม่ด้วยมือ -- เกิดจาก API ค้นหา
+# ที่อยู่ของแอปเองล้มเหลว/timeout ไม่ใช่ปัญหาคำค้นที่พิมพ์ผิด
+ADDRESS_SEARCH_FAILED_ALERT_AUTO_ID = "EG.CustomerCapture.AddressSearchFailed"
+ADDRESS_SEARCH_FAILED_ACCEPT_AUTO_ID = "AcceptButton"
+
 # ปุ่มเลือกกล่องสำเร็จรูป "ข" ที่หน้า MailPieceShape
 # ยืนยันแล้วจาก controls dump จริง (dump.txt): tile "กล่องสำเร็จรูป ข" คือ
 # hotkey เลข 4 บนหน้าจอ ซึ่งตรงกับ auto_id="MailPieceShape_9"
@@ -504,12 +514,56 @@ def report_validation_errors(window, timeout=1):
         pass
 
 
-def search_and_select_address(window, primary_search_term, timeout_per_try=7):
+def handle_address_search_failed_alert(window, timeout=2):
+    """
+    แก้: ยืนยันจาก control dump จริงที่ผู้ใช้ส่งมาแล้วว่า Alert "คำเตือน:
+    ไม่สามารถเชื่อมต่อระบบได้" มี auto_id="EG.CustomerCapture.AddressSearchFailed"
+    (control_type="Custom") และปุ่ม "ตกลง" คือ auto_id="AcceptButton"
+    (hotkey ENTER) -- Alert นี้ขึ้นเมื่อ API ค้นหาที่อยู่ของแอป Riposte เอง
+    เชื่อมต่อไม่สำเร็จ/timeout (ไม่ใช่ปัญหาคำค้นที่พิมพ์ผิด) เดิมสคริปต์ไม่
+    เคยรู้จัก Alert นี้เลย ทำให้ค้าง (ผู้ใช้ต้องกด Enter ปิด Alert เองด้วยมือ
+    แล้วกด Esc ย้อนกลับไปกรอกคำค้นใหม่)
+
+    ใช้ auto_id ล้วน (ไม่ผสม title) ตอนกดปุ่ม เพราะปุ่มนี้มี Static ลูก
+    (auto_id="CaptionTextBlock") ที่มีข้อความ "ตกลง" ซ้ำกับปุ่มแม่ --
+    ถ้าใช้ title_re ร่วมด้วยจะเจอปัญหา ElementAmbiguousError แบบเดียวกับที่
+    เจอกับปุ่ม "ไม่"/"ถัดไป" มาก่อนแล้ว
+
+    คืน True ถ้าเจอ Alert แล้วกด "ตกลง" ปิดให้เรียบร้อย (แปลว่าควรลองค้นหา
+    คำเดิมซ้ำ) คืน False ถ้าไม่เจอ Alert เลย
+    """
+    if is_control_visible(
+        window,
+        timeout=timeout,
+        auto_id=ADDRESS_SEARCH_FAILED_ALERT_AUTO_ID,
+        control_type="Custom",
+    ):
+        print(
+            "[DEBUG] พบ Alert 'ไม่สามารถเชื่อมต่อระบบได้' (API ค้นหาที่อยู่ "
+            "ล้มเหลว) -> กด 'ตกลง' ปิด แล้วจะลองค้นหาคำเดิมซ้ำ"
+        )
+        wait_and_click(
+            window,
+            auto_id=ADDRESS_SEARCH_FAILED_ACCEPT_AUTO_ID,
+            control_type="Button",
+        )
+        return True
+    return False
+
+
+def search_and_select_address(
+    window, primary_search_term, timeout_per_try=7, max_retries_per_term=2
+):
     """
     ค้นหาที่อยู่แล้วเลือกผลลัพธ์แรก -- ลอง primary_search_term (จาก CSV หรือ
     DEFAULT_ADDRESS_SEARCH) ก่อน ถ้าค้นแล้วไม่มีผลลัพธ์เลย (เช่นรหัสไปรษณีย์
     แถวนี้ไม่มีเลขที่ตรงกับที่ลองค้น) ให้ไล่ลองค่าถัดไปใน
     ADDRESS_SEARCH_FALLBACK_CANDIDATES จนกว่าจะเจอ หรือหมดรายการ
+
+    แก้: ถ้าเจอ Alert "ไม่สามารถเชื่อมต่อระบบได้" (API แอปเองล้มเหลว/
+    timeout -- ดูคอมเมนต์ที่ handle_address_search_failed_alert) จะลองค้นหา
+    คำเดิมซ้ำก่อน (สูงสุด max_retries_per_term ครั้ง) แทนที่จะข้ามไปคำถัดไป
+    ทันที เพราะสาเหตุคือ API ช้า/หลุดชั่วคราว ไม่ใช่ว่าคำค้นนั้นไม่มีอยู่จริง
     """
     search_terms = [primary_search_term] + [
         term for term in ADDRESS_SEARCH_FALLBACK_CANDIDATES if term != primary_search_term
@@ -517,61 +571,59 @@ def search_and_select_address(window, primary_search_term, timeout_per_try=7):
 
     last_error = None
     for term in search_terms:
-        print(f"[DEBUG] กำลังค้นหาที่อยู่ด้วยคำว่า {term!r}")
-        try:
-            # แก้: ต้องรอ overlay "กรุณารอสักครู่" จากการค้นหาคำก่อนหน้าให้
-            # หายไปก่อน ไม่งั้นช่องกรอกจะยัง disabled อยู่จริง (ยืนยันจาก
-            # controls dump จริงแล้ว) พิมพ์คำนี้ไม่ติด -> ElementNotEnabled
-            wait_for_loading_overlay_to_clear(window)
+        for attempt in range(1, max_retries_per_term + 2):
+            print(f"[DEBUG] กำลังค้นหาที่อยู่ด้วยคำว่า {term!r} (ครั้งที่ {attempt})")
+            try:
+                # แก้: ต้องรอ overlay "กรุณารอสักครู่" จากการค้นหาคำก่อนหน้าให้
+                # หายไปก่อน ไม่งั้นช่องกรอกจะยัง disabled อยู่จริง (ยืนยันจาก
+                # controls dump จริงแล้ว) พิมพ์คำนี้ไม่ติด -> ElementNotEnabled
+                wait_for_loading_overlay_to_clear(window)
 
-            # แก้: force_type_keys=True เพราะช่องนี้เป็น search-as-you-type
-            # ถ้าใช้ set_edit_text() (ตั้งค่าตรงผ่าน UIA ไม่ใช่จำลอง
-            # keyboard event จริง) แอปจะไม่รู้ว่ามีการพิมพ์เกิดขึ้น เลยไม่
-            # trigger ค้นหาให้เลย ทั้งที่ค่าที่โชว์ในช่องถูกต้อง
-            fill_edit(
-                window,
-                term,
-                title_re=r"^ที่อยู่$",
-                auto_id="LabelForTextBox",
-                force_type_keys=True,
-            )
-            
+                # แก้: force_type_keys=True เพราะช่องนี้เป็น search-as-you-type
+                # ถ้าใช้ set_edit_text() (ตั้งค่าตรงผ่าน UIA ไม่ใช่จำลอง
+                # keyboard event จริง) แอปจะไม่รู้ว่ามีการพิมพ์เกิดขึ้น เลยไม่
+                # trigger ค้นหาให้เลย ทั้งที่ค่าที่โชว์ในช่องถูกต้อง
+                fill_edit(
+                    window,
+                    term,
+                    title_re=r"^ที่อยู่$",
+                    auto_id="LabelForTextBox",
+                    force_type_keys=True,
+                )
 
-            # แก้: พิมพ์คำค้นหาอย่างเดียวไม่พอ ต้องกด "ถัดไป"/submit ก่อน
-            # หน้าผลลัพธ์ถึงจะขึ้น (ผู้ใช้ทดสอบด้วยมือแล้วยืนยันตรงนี้)
-            click_next(window)
-            
+                # แก้: พิมพ์คำค้นหาอย่างเดียวไม่พอ ต้องกด "ถัดไป"/submit ก่อน
+                # หน้าผลลัพธ์ถึงจะขึ้น (ผู้ใช้ทดสอบด้วยมือแล้วยืนยันตรงนี้)
+                click_next(window)
 
-            address_result_group = window.child_window(
-                auto_id="AddressResult", control_type="Group"
-            )
-            address_result_group.wait("exists visible", timeout=timeout_per_try)
+                # แก้: รอ overlay ของการค้นหารอบนี้ให้จบก่อน แล้วค่อยเช็คว่า
+                # เจอ Alert "ไม่สามารถเชื่อมต่อระบบได้" หรือไม่ (ยืนยัน
+                # auto_id จริงจาก control dump แล้ว) ถ้าเจอ ให้ปิดแล้ว retry
+                # คำเดิมทันที ไม่ต้องรอ except/timeout ก่อน
+                wait_for_loading_overlay_to_clear(window)
+                if handle_address_search_failed_alert(window):
+                    continue
 
-            first_address_result = address_result_group.child_window(
-                control_type="ListItem", found_index=0
-            )
-            first_address_result.wait("exists visible", timeout=timeout_per_try)
-            first_address_result.wrapper_object().click_input()
-            
+                address_result_group = window.child_window(
+                    auto_id="AddressResult", control_type="Group"
+                )
+                address_result_group.wait("exists visible", timeout=timeout_per_try)
 
-            print(f"[DEBUG] ค้นหาที่อยู่ด้วยคำว่า {term!r} เจอผลลัพธ์ -> เลือกตัวแรกแล้ว")
-            return True
+                first_address_result = address_result_group.child_window(
+                    control_type="ListItem", found_index=0
+                )
+                first_address_result.wait("exists visible", timeout=timeout_per_try)
+                first_address_result.wrapper_object().click_input()
 
-        except Exception as error:
-            last_error = error
-            print(f"[DEBUG] ค้นหาที่อยู่ด้วยคำว่า {term!r} ไม่เจอผลลัพธ์ ลองคำถัดไป")
-            # แก้: เดิม sleep คงที่ 0.5 วิตรงนี้ ไม่พอในกรณี API ช้าจริง --
-            # ย้ายไปรอ overlay "กรุณารอสักครู่" หายไปก่อนตอนต้นลูปแทนแล้ว
-            # (wait_for_loading_overlay_to_clear ด้านบน) แม่นกว่าเพราะรอตาม
-            # เวลาจริงที่ API ใช้ ไม่ใช่เดาตัวเลขคงที่
-            # แก้: ผู้ใช้ถ่ายรูปเจอ Dialog "คำเตือน: ไม่สามารถเชื่อมต่อระบบ
-            # ได้" มาให้ดู -- เป็น error ที่แอป Riposte เองสร้างตอนเรียก API
-            # เช็คที่อยู่ไม่สำเร็จ (ไม่ใช่ "ไม่มีที่อยู่ตรงกับเลขที่ค้นหา"
-            # จริงๆ) ยังไม่มี auto_id จริงของ Dialog นี้ (ไม่อยากเดา) เลย dump
-            # control tree ไว้อัตโนมัติทุกครั้งที่ค้นหาคำนี้ล้มเหลว เผื่อรอบ
-            # หน้าเจอ Dialog นี้อีก จะได้ auto_id จริงมาสร้างตัวจับที่แม่นยำ
-            # (กด "ตกลง" แล้วลองคำเดิมซ้ำ แทนที่จะข้ามไปคำถัดไปเลย)
-            dump_controls_on_failure(window, f"address_search_{term}")
+                print(f"[DEBUG] ค้นหาที่อยู่ด้วยคำว่า {term!r} เจอผลลัพธ์ -> เลือกตัวแรกแล้ว")
+                return True
+
+            except Exception as error:
+                last_error = error
+                print(
+                    f"[DEBUG] ค้นหาที่อยู่ด้วยคำว่า {term!r} ไม่เจอผลลัพธ์ "
+                    f"(ครั้งที่ {attempt}/{max_retries_per_term + 1})"
+                )
+                dump_controls_on_failure(window, f"address_search_{term}_{attempt}")
 
     print(f"[ERROR] ลองค้นหาที่อยู่ทุกคำใน {search_terms} แล้วไม่เจอผลลัพธ์เลย")
     if last_error:
