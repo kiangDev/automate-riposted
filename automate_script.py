@@ -229,7 +229,7 @@ def resolve_edit_wrapper(wrapper, timeout=1.5):
     )
 
 
-def fill_edit(window, value, timeout=1.5, force_type_keys=False, **criteria):
+def fill_edit(window, value, timeout=5, force_type_keys=False, **criteria):
     """
     รอช่องกรอก ล้างข้อมูลเดิม แล้วกรอกค่าใหม่
 
@@ -321,7 +321,7 @@ def handle_repeat_transaction_alert(window, timeout=5):
         )
 
 
-def handle_dangerous_goods_question(window, timeout=1):
+def handle_dangerous_goods_question(window, timeout=5):
     """
     หน้าคำถามสินค้าอันตราย (EG.Shipping.DangerousGoodsQuestion) จะแทรกโผล่มา
     หลังเลือกกล่องเสร็จ ไม่ได้โผล่ทุกครั้งแน่นอน (ยังไม่ยืนยัน) เลยเช็คก่อนว่า
@@ -363,7 +363,7 @@ def handle_postcode_overlap_alert(window, timeout=5):
         
 
 
-def handle_customer_capture_postal_code_alert(window, timeout=1.5):
+def handle_customer_capture_postal_code_alert(window, timeout=8):
     """
     Alert คนละตัวกับ handle_postcode_overlap_alert() ด้านบน -- ตัวนี้โผล่
     ขึ้นมาที่หน้า "ข้อมูลผู้ส่ง/ผู้รับ" (EG.CustomerCapture.CustomerCaptureView)
@@ -445,6 +445,13 @@ def click_next_verified(window, max_attempts=3, settle_time=0.5):
     (สูงสุด max_attempts ครั้ง) ถ้าลองครบแล้วยังไม่เปลี่ยน ให้แค่เตือนแล้ว
     ปล่อยผ่านไปเลย (ไม่ throw หยุดสคริปต์ -- ตามที่ตกลงกันไว้ว่าข้ามได้ ไม่ต้อง
     กรอกอะไรในหน้านี้)
+
+    แก้: เจอ settle_time โดนแก้เป็น 5 (จากการแก้ไฟล์เอง) อันตรายมาก เพราะ
+    ตัวนี้คือ time.sleep() จริง ไม่ใช่เพดาน .wait() แบบ timeout ตัวอื่นในไฟล์
+    นี้ -- รันเต็มจำนวนทุกครั้งไม่ว่าหน้าจะเปลี่ยนเร็วแค่ไหน และฟังก์ชันนี้ถูก
+    เรียกในลูป "3x" ทุกแถว เท่ากับเสียเวลาแน่นอนอย่างน้อย 3x5=15 วิ/แถว แบบ
+    หนีไม่พ้น (ต่างจาก timeout เพดานอื่นๆ ที่ถ้าหน้าเปลี่ยนเร็วจะไม่กระทบเลย)
+    ปรับกลับเป็น 0.5 ห้ามขึ้นสูงอีกเพราะกระทบความเร็วโดยตรงจริง
     """
     page_before = get_main_pane_auto_id(window)
 
