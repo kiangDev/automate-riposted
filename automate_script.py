@@ -660,13 +660,20 @@ def recover_address_search_page(window):
 
 
 def search_and_select_address(
-    window, primary_search_term, timeout_per_try=7, max_retries_per_term=2
+    window, primary_search_term, timeout_per_try=10, max_retries_per_term=2
 ):
     """
     ค้นหาที่อยู่แล้วเลือกผลลัพธ์แรก -- ลอง primary_search_term (จาก CSV หรือ
     DEFAULT_ADDRESS_SEARCH) ก่อน ถ้าค้นแล้วไม่มีผลลัพธ์เลย (เช่นรหัสไปรษณีย์
     แถวนี้ไม่มีเลขที่ตรงกับที่ลองค้น) ให้ไล่ลองค่าถัดไปใน
     ADDRESS_SEARCH_FALLBACK_CANDIDATES จนกว่าจะเจอ หรือหมดรายการ
+
+    แก้: ผู้ใช้ส่ง dump จริงมาแล้วเจอกรณี timeout_per_try=7 ไม่พอ -- ตอน fail
+    หน้ายังเป็น AddressSearchInputView ปกติ (ไม่มี Alert เลย) แต่ overlay
+    "กรุณารอสักครู่" ยังค้างอยู่ แปลว่า API ค้นหาแค่ยังไม่ตอบกลับทัน 7 วิ
+    ไม่ใช่ error -- จุดนี้ปลอดภัยที่จะเพิ่ม timeout เพราะเป็นการรอผลลัพธ์จริง
+    (ไม่ใช่เช็คของที่มักจะไม่มีอยู่แบบ Alert ต่างๆ ที่ลด timeout ไปก่อนหน้า)
+    เพิ่มเป็น 10 วิ
 
     แก้: ถ้าเจอ Alert "ไม่สามารถเชื่อมต่อระบบได้" (API แอปเองล้มเหลว/
     timeout -- ดูคอมเมนต์ที่ handle_address_search_failed_alert) จะลองค้นหา
