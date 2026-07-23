@@ -199,7 +199,7 @@ def dump_controls_on_failure(window, tag):
 
 
 
-def wait_and_click(window, timeout=5, wait_states="exists visible enabled", **criteria):
+def wait_and_click(window, timeout=10, wait_states="exists visible enabled", **criteria):
     print(f"[DEBUG] กำลังค้นหา control: {criteria}")
     try:
         control = window.child_window(**criteria)
