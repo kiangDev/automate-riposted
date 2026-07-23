@@ -392,6 +392,59 @@ def handle_repeat_transaction_alert(window, timeout=5):
             box_seen_without_alert_since = None
 
 
+def wait_for_alert_or_next_page(
+    window,
+    alert_criteria,
+    safe_criteria,
+    timeout=4,
+    poll_interval=0.3,
+    settle_seconds=1.0,
+):
+    """
+    แก้: ผลจาก audit หาจุดช้าทั้งไฟล์ -- เทคนิคเดียวกับที่ใช้ใน
+    handle_repeat_transaction_alert() ด้านบน ยกมาทำเป็นฟังก์ชันกลางใช้ซ้ำได้
+    เพราะเจอรูปแบบเดิมซ้ำๆ ที่จุดอื่น: Alert ที่ "อาจจะ" ขึ้นมาแต่ไม่เสมอไป
+    (postcode overlap, คำถามสินค้าอันตราย, postal code alert รอบ 2 ฯลฯ)
+    เดิมแต่ละจุดเรียก handle_X(timeout=N) แยกเดี่ยวๆ ก่อน แล้วค่อยไปรอปุ่ม/
+    หน้าถัดไปต่อ -- แต่ is_control_visible()/.wait() ถ้า control ไม่ปรากฏจริง
+    จะ "รอเต็ม timeout เสมอ" (ดูคอมเมนต์เต็มที่ is_control_visible/
+    handle_dangerous_goods_question) ทำให้ทุกแถวที่ไม่มี Alert (ส่วนใหญ่)
+    เสียเวลาเปล่ารอเต็ม timeout นั้นก่อนไปต่อได้ทุกครั้ง รวมกันหลายจุดต่อแถว
+    กลายเป็นต้นทุนหลักที่ทำให้ทั้งรันช้ากว่าที่ควร
+
+    แก้ด้วยการ "แข่ง" ระหว่าง Alert กับสัญญาณของหน้า/ปุ่มถัดไปที่ควรพร้อมอยู่
+    แล้วถ้าไม่มี Alert จริงๆ -- เจอสัญญาณไหนก่อนก็คืนค่าทันที ไม่ต้องรอเปล่า
+    จนครบ timeout
+
+    ต้องมี settle_seconds (ค่าเริ่มต้น 1 วิ) กันเคสหน้า/ปุ่มถัดไป render
+    เสร็จก่อน Alert ที่จะขึ้นทีหลัง (บั๊กเดียวกับที่เจอจริงใน
+    handle_repeat_transaction_alert ตอนแรก) -- ต้องเห็นสัญญาณปลอดภัย
+    ต่อเนื่อง settle_seconds วิก่อนเชื่อว่าไม่มี Alert จริงๆ
+
+    คืนค่า:
+    - "alert"   เจอ Alert แล้ว (ยังไม่ได้กด -- ผู้เรียกต้องกดเองต่อ)
+    - "safe"    ไม่มี Alert, ปุ่ม/หน้าถัดไปพร้อมแล้วจริง
+    - "timeout" หมดเวลาโดยไม่มีสัญญาณไหนชัดเจนเลย -- ผู้เรียกควรมี fallback
+                (เช่น wait_and_click เดิมที่มี timeout ยาวกว่า) รองรับต่อเอง
+    """
+    deadline = time.time() + timeout
+    safe_seen_since = None
+
+    while time.time() < deadline:
+        if is_control_visible(window, timeout=poll_interval, **alert_criteria):
+            return "alert"
+
+        if is_control_visible(window, timeout=poll_interval, **safe_criteria):
+            if safe_seen_since is None:
+                safe_seen_since = time.time()
+            elif time.time() - safe_seen_since >= settle_seconds:
+                return "safe"
+        else:
+            safe_seen_since = None
+
+    return "timeout"
+
+
 def handle_dangerous_goods_question(window, timeout=1.5):
     """
     หน้าคำถามสินค้าอันตราย (EG.Shipping.DangerousGoodsQuestion) จะแทรกโผล่มา
@@ -1200,8 +1253,28 @@ def main():
 
                         click_next(main_window)  # ถัดไป (หลังเลือกกล่อง)
 
-                        # แก้: หน้าคำถามสินค้าอันตรายแทรกมาตรงนี้ (ถ้ามี)
-                        handle_dangerous_goods_question(main_window)
+                        # แก้: ผล audit หาจุดช้าทั้งไฟล์ -- race หน้าคำถาม
+                        # สินค้าอันตราย (ถ้ามี) เทียบกับปุ่ม SUBMIT_AUTO_ID ที่
+                        # ต้องกดต่ออยู่แล้วไม่ว่าจะมีหน้านี้หรือไม่ (ดู
+                        # wait_for_alert_or_next_page ด้านบน) แทนที่จะรอเต็ม
+                        # timeout=1.5 ของ handle_dangerous_goods_question()
+                        # ทุกแถวที่ไม่มีหน้านี้ (ส่วนใหญ่ -- หน้านี้ข้ามไปเลย
+                        # ถ้าเพิ่งตอบ Yes ที่ Alert ทำรายการซ้ำ) พฤติกรรม
+                        # ตอนเจอ/ไม่เจอยังเหมือนเดิมทุกอย่าง แค่ไม่ต้องรอเปล่า
+                        race_result = wait_for_alert_or_next_page(
+                            main_window,
+                            alert_criteria={
+                                "auto_id": DANGEROUS_GOODS_ANSWER_AUTO_ID,
+                                "control_type": "Button",
+                            },
+                            safe_criteria={
+                                "auto_id": SUBMIT_AUTO_ID,
+                                "control_type": "Button",
+                            },
+                            timeout=1.5,
+                        )
+                        if race_result == "alert":
+                            handle_dangerous_goods_question(main_window)
 
                         click_next(main_window)  # ยืนยัน (ปุ่มเดียวกัน auto_id)
 
@@ -1230,7 +1303,31 @@ def main():
 
                         # แก้: รหัสไปรษณีย์บางเลขครอบคลุมหลายพื้นที่ จะมี
                         # Alert แทรกถามให้ยืนยัน (ถ้ามี)
-                        handle_postcode_overlap_alert(main_window)
+                        # แก้: ผล audit หาจุดช้าทั้งไฟล์ -- race Alert นี้เทียบ
+                        # กับปุ่มเลือกบริการ (SHIPPING_SERVICE_AUTO_ID) ที่
+                        # ต้องกดต่ออยู่แล้ว (ดู wait_for_alert_or_next_page
+                        # ด้านบน) แทนที่จะรอเต็ม timeout=4 ของ
+                        # handle_postcode_overlap_alert() ทุกแถวที่ไม่มี Alert
+                        # (ส่วนใหญ่ -- ขึ้นเฉพาะรหัสไปรษณีย์ที่ครอบคลุมหลาย
+                        # พื้นที่เท่านั้น) พฤติกรรมตอนเจอ/ไม่เจอ Alert ยังเหมือน
+                        # เดิมทุกอย่าง (ยังใช้ handle_postcode_overlap_alert()
+                        # ตัวเดิมกดจริงถ้าเจอ, ถ้า timeout ก็ยัง fallback ไปที่
+                        # wait_and_click(timeout=10) ด้านล่างเหมือนเดิม) แค่ไม่
+                        # ต้องรอเปล่าถ้าไม่มี Alert
+                        race_result = wait_for_alert_or_next_page(
+                            main_window,
+                            alert_criteria={
+                                "auto_id": "ProceedCommand",
+                                "control_type": "Button",
+                            },
+                            safe_criteria={
+                                "auto_id": SHIPPING_SERVICE_AUTO_ID,
+                                "control_type": "Button",
+                            },
+                            timeout=4,
+                        )
+                        if race_result == "alert":
+                            handle_postcode_overlap_alert(main_window)
 
                         # เลือกบริการ -- ยืนยันจาก controls dump จริงแล้วว่า
                         # ปุ่มที่ต้องกดคือ auto_id="ShippingService_2572"
@@ -1354,7 +1451,25 @@ def main():
                         # Alert ขึ้นมาซ้ำตรงนี้เลยไม่มีใครจัดการ ค้างบังหน้าจอ
                         # จนหา "ไม่" ไม่เจอ (TimeoutError) เพิ่มเรียกอีกจุดนี้
                         # ด้วย (กด "ยกเลิก" คงรหัสเดิมเหมือนเดิม)
-                        handle_customer_capture_postal_code_alert(main_window)
+                        # แก้: ผล audit หาจุดช้าทั้งไฟล์ -- race Alert นี้เทียบ
+                        # กับปุ่ม "ไม่" ที่ต้องกดต่ออยู่แล้วด้านล่าง (ดู
+                        # wait_for_alert_or_next_page ด้านบน) แทนที่จะรอเต็ม
+                        # timeout=4 ทุกแถวที่ไม่มี Alert ตรงจุดนี้ (ส่วนใหญ่)
+                        # พฤติกรรมตอนเจอ/ไม่เจอยังเหมือนเดิมทุกอย่าง
+                        race_result = wait_for_alert_or_next_page(
+                            main_window,
+                            alert_criteria={
+                                "auto_id": "PostalCodeAlertDeclineCommand",
+                                "control_type": "Button",
+                            },
+                            safe_criteria={
+                                "title_re": r"^ไม่$",
+                                "control_type": "Button",
+                            },
+                            timeout=4,
+                        )
+                        if race_result == "alert":
+                            handle_customer_capture_postal_code_alert(main_window)
 
                         report_validation_errors(main_window)
                         print(
