@@ -418,7 +418,7 @@ def handle_dangerous_goods_question(window, timeout=1.5):
         click_next(window)
 
 
-def handle_postcode_overlap_alert(window, timeout=1.5):
+def handle_postcode_overlap_alert(window, timeout=4):
     """
     หลังกรอกรหัสไปรษณีย์ที่หน้า "Destination" (EG.Shipping.Destination,
     ช่อง auto_id="PostCodeDestination") บางครั้งรหัสที่พิมพ์ครอบคลุมหลาย
@@ -428,6 +428,12 @@ def handle_postcode_overlap_alert(window, timeout=1.5):
     handle_dangerous_goods_question() (ดูคอมเมนต์ที่นั่นแบบเต็ม) Alert นี้
     ไม่ได้ขึ้นทุกแถว (แค่รหัสไปรษณีย์ที่ครอบคลุมหลายพื้นที่เท่านั้น) แถวที่
     ไม่ขึ้นจะเสียเวลาเปล่ารอเต็ม timeout ทุกครั้งถ้าตั้งไว้สูง
+
+    แก้: ผู้ใช้ทดสอบจริงแล้วพบว่า 1.5 วิสั้นเกินไปอีกตัว -- Alert นี้ขึ้นมา
+    จริง (ผู้ใช้เห็นปุ่ม "ดำเนินการ" บนจอ) แต่สคริปต์เช็คไม่ทัน ข้ามไปเลย
+    แล้วไปพังที่ขั้นตอนถัดไปแทน ต้อง recover_ui() กู้คืน -- ปรับขึ้นเป็น 4
+    วิ เท่ากับ handle_customer_capture_postal_code_alert() ที่เจอปัญหา
+    เดียวกันมาก่อนแล้ว (Alert กลุ่มนี้เด้งช้ากว่า 1.5-2 วิได้จริง)
 
     แก้: ยืนยันจาก controls dump จริงของ Alert นี้แล้ว 100% (ผู้ใช้ส่งมาตอน
     Alert กำลังโชว์อยู่จริง) นี่คือ Alert คนละตัวกับ
