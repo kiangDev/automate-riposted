@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>mini EDR บน macOS ที่ระดับ system call — ข้อเสนอโปรเจกต์จบ</title>
+<style>
+  @page { size: A4; margin: 14mm 15mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Noto Sans Thai", "Sukhumvit Set", "Thonburi", -apple-system, sans-serif;
+    font-size: 9.4pt; line-height: 1.5; color: #1a1a1a; margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1 { font-size: 15pt; font-weight: 600; margin: 0 0 2px; letter-spacing: -0.2px; }
+  .sub { font-size: 8.6pt; color: #555; margin-bottom: 9px; padding-bottom: 8px; border-bottom: 1.5px solid #1a1a1a; }
+  h2 { font-size: 10pt; font-weight: 600; margin: 11px 0 4px; }
+  h2 .n { color: #888; font-weight: 400; margin-right: 5px; }
+  p { margin: 0 0 5px; }
+  ul { margin: 0 0 5px; padding-left: 16px; }
+  li { margin-bottom: 2.5px; }
+  code { font-family: "SF Mono", Menlo, monospace; font-size: 8.4pt; background: #f2f2f0; padding: 0 2.5px; border-radius: 2px; }
+  b { font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; margin: 3px 0 6px; font-size: 8.8pt; }
+  td, th { border-top: 0.6px solid #ddd; padding: 3.5px 5px; text-align: left; vertical-align: top; }
+  th { background: #f7f7f5; font-weight: 600; border-top: 0.6px solid #bbb; }
+  td:first-child { font-weight: 600; width: 27%; }
+  .rq { border-left: 2.5px solid #1a1a1a; padding: 4px 0 4px 9px; margin: 4px 0 6px; }
+  .two { display: flex; gap: 16px; }
+  .two > div { flex: 1; }
+  .foot { margin-top: 10px; padding-top: 6px; border-top: 0.6px solid #ddd; font-size: 7.9pt; color: #666; }
+  .tl { font-size: 8.6pt; }
+  .tl td:first-child { width: 15%; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<h1>mini EDR บน macOS ที่ระดับ system call</h1>
+<div class="sub">ข้อเสนอโปรเจกต์จบ / ฝึกงาน · เขียนด้วย Zig + arm64 assembly · โฟกัส file &amp; persistence telemetry · ระยะเวลา 24 สัปดาห์ · ผู้เสนอ: kiang</div>
+
+<h2><span class="n">1</span>ปัญหา</h2>
+<ul>
+  <li><b>EDR บน macOS เป็นกล่องดำ</b> — เมื่อเกิด incident ทีม security ตอบไม่ได้ว่า "ที่ log ไม่มี event นี้ เพราะไม่มีการโจมตี หรือเพราะ sensor มองไม่เห็น"</li>
+  <li><b>องค์ความรู้เรื่อง kernel ของ macOS มีน้อย</b> — ตำรา OS สอน Linux เป็นหลัก ทั้งที่ XNU ต่างออกไปมาก (Mach + BSD, MACF, SIP, การยกเลิก kext) นักศึกษาที่อยากเข้าใจ kernel ของเครื่องที่ใช้อยู่ทุกวันแทบไม่มีจุดเริ่ม</li>
+  <li><b>ช่องว่างการมองเห็นในชั้น filesystem ของ APFS</b> — syscall เฉพาะทางเช่น <code>clonefile(2)</code>, <code>fclonefileat(2)</code>, <code>renameatx_np(2)</code> คัดลอกและสลับไฟล์ได้โดยไม่ผ่านเส้นทาง <code>open</code>/<code>write</code> เดิม เครื่องมือ monitoring แต่ละชั้นเห็นไม่เท่ากัน แต่ยังไม่มีใครวัดออกมาเป็นตัวเลข</li>
+</ul>
+
+<h2><span class="n">2</span>ทำไมผมอยากทำ — ความรู้ที่ต้องการจากโปรเจกต์นี้</h2>
+<p>เป้าหมายไม่ใช่การสร้าง "อีกหนึ่ง security tool" แต่คือการเข้าใจเส้นทางที่คำสั่งหนึ่งคำสั่งเดินจากโปรแกรมลงไปถึง kernel แล้วกลับขึ้นมา ในระดับที่อธิบายได้ทุกขั้น การเขียน EDR บังคับให้ต้องรู้สี่เรื่องนี้โดยไม่มีทางเลี่ยง:</p>
+<ul>
+  <li><b>syscall ABI ระดับ instruction</b> — บน arm64 การเรียก syscall คือ <code>svc #0x80</code> โดยหมายเลขอยู่ใน <code>x16</code> (บวก = BSD syscall, ลบ = Mach trap) argument อยู่ใน <code>x0</code>–<code>x7</code></li>
+  <li><b>เส้นทางภายใน XNU</b> — <code>sysent</code> table ที่ generate จาก <code>bsd/kern/syscalls.master</code> ต่อไปยังชั้น VFS</li>
+  <li><b>MACF (TrustedBSD MAC Framework)</b> — จุดที่ Sandbox, AMFI และ EndpointSecurity เสียบตัวเองเข้าไปในเส้นทาง syscall นี่คือคำอธิบายว่า <i>ทำไม</i> EDR บน macOS เห็นบางอย่างและไม่เห็นบางอย่าง</li>
+  <li><b>ข้อจำกัดเชิงสถาปัตยกรรมของแพลตฟอร์มปิด</b> — SIP, code signing, entitlement, การตายของ kext เป็นการตัดสินใจเชิงออกแบบที่มีเหตุผล การชนกับข้อจำกัดพวกนี้ด้วยมือตัวเองสอนเรื่อง OS security design ได้มากกว่าการอ่าน</li>
+</ul>
+<p>ทักษะที่ติดตัวหลังจบ: อ่าน kernel source ของระบบปิดได้ · เขียนโค้ดที่คุยกับ kernel API ระดับ C ได้ · ออกแบบการทดลองเพื่อวัดขอบเขตความสามารถของเครื่องมือได้</p>
+
+<h2><span class="n">3</span>คำถามวิจัย</h2>
+<div class="rq">ชั้น monitoring ที่ใช้ได้จริงบน macOS สมัยใหม่ — FSEvents, kqueue/vnode และ EndpointSecurity — เห็น file operation ครบต่างกันแค่ไหน และมี syscall ใดที่หลุดจากการมองเห็นของแต่ละชั้น?</div>
+
+<h2><span class="n">4</span>สิ่งที่จะสร้าง</h2>
+<table>
+  <tr><th>ส่วนประกอบ</th><th>รายละเอียด</th></tr>
+  <tr><td>Sensor</td><td>EndpointSecurity client เขียนด้วย Zig (<code>@cImport</code> เข้า header ภาษา C ตรง ๆ) subscribe event ตระกูลไฟล์: <code>ES_EVENT_TYPE_NOTIFY_CREATE</code>, <code>_WRITE</code>, <code>_RENAME</code>, <code>_UNLINK</code>, <code>_CLONE</code>, <code>_EXEC</code></td></tr>
+  <tr><td>Persistence watcher</td><td>เฝ้าจุดที่มัลแวร์ macOS ใช้ฝังตัวจริง — <code>LaunchAgents</code>/<code>LaunchDaemons</code> plist, login items, <code>~/Library/Preferences</code> (macOS ไม่มี registry — ของเทียบเท่าคือชั้นนี้)</td></tr>
+  <tr><td>Rule engine</td><td>กฎแบบประกาศ เทียบเคียงแนวคิด Sigma พร้อม process ancestry เพื่อลด false positive</td></tr>
+  <tr><td>asm coverage harness</td><td>โปรแกรม arm64 assembly ที่ยิง raw syscall ข้าม libc เพื่อทดสอบว่าแต่ละชั้น sensor ยังเห็นหรือไม่ ครอบคลุม syscall เฉพาะของ APFS</td></tr>
+  <tr><td>ผลการวัด</td><td>coverage matrix: syscall × ชั้น sensor × เห็น / ไม่เห็น / เห็นบางส่วน</td></tr>
+</table>
+<p><b>ตัดออกอย่างตั้งใจ:</b> network telemetry, การบล็อกแบบ AUTH event, central server หลายเครื่อง, การแจกจ่ายผ่าน MDM — เพื่อให้ 24 สัปดาห์ทำเสร็จได้จริงและลึกพอ</p>
+
+<div class="two">
+  <div>
+    <h2><span class="n">5</span>ทำไม Zig และ assembly</h2>
+    <p><b>Zig</b> — เข้า C API ได้โดยไม่ต้องเขียน binding, ควบคุมการจัดสรรหน่วยความจำได้ชัดเจน (สำคัญมาก เพราะ ES handler ที่ช้าเกิน deadline จะถูก kernel ฆ่า client ทิ้ง), ไม่มี hidden control flow ให้เดา</p>
+    <p><b>Assembly</b> — จำเป็นเพราะการทดสอบ coverage ต้องยิง syscall ที่ libc ไม่มี wrapper ให้ และต้องมั่นใจว่าไม่มีชั้นใดแทรกกลาง ส่วนนี้คือสิ่งที่เปลี่ยนโปรเจกต์จาก "เครื่องมือ" ให้เป็น "การวัดผล"</p>
+  </div>
+  <div>
+    <h2><span class="n">6</span>ความเสี่ยงและแผนสำรอง</h2>
+    <table>
+      <tr><td>ขอ entitlement จาก Apple ไม่ผ่าน</td><td>ใช้เครื่อง dev ที่ปิด SIP + <code>amfi_get_out_of_my_way=1</code> ซึ่งเป็นวิธีมาตรฐานของงานวิจัยด้านนี้</td></tr>
+      <tr><td>ES client รันไม่ได้เลย</td><td>ดึง event ผ่าน <code>/usr/bin/eslogger</code> ของ Apple ได้ข้อมูลชุดเดียวกันโดยไม่ต้องมี entitlement</td></tr>
+      <tr><td>Zig ยังไม่นิ่งที่ API ระดับนี้</td><td>ส่วนที่ติดกับ ES API เขียนเป็น C แล้วให้ Zig เรียก</td></tr>
+    </table>
+  </div>
+</div>
+
+<h2><span class="n">7</span>แผน 24 สัปดาห์ และผลลัพธ์ที่ส่งมอบ</h2>
+<table class="tl">
+  <tr><td>สัปดาห์ 1–4</td><td>อ่าน XNU source ไล่เส้นทาง <code>open(2)</code> ตั้งแต่ <code>svc</code> ถึง MACF hook เขียนสรุปเป็นเอกสาร</td></tr>
+  <tr><td>5–8</td><td>ตั้ง dev environment (SIP/AMFI, entitlement) และ ES client ตัวแรกใน Zig ที่ปรินต์ event ได้</td></tr>
+  <tr><td>9–12</td><td>asm harness และการทดลองวัดชั้น FSEvents / kqueue / ES ครั้งแรก</td></tr>
+  <tr><td>13–16</td><td>Rule engine และ persistence watcher</td></tr>
+  <tr><td>17–20</td><td>รวบรวม coverage matrix, ทำซ้ำให้ผลนิ่ง, จำลองพฤติกรรม ransomware เพื่อทดสอบ</td></tr>
+  <tr><td>21–24</td><td>เขียนรายงาน, เตรียม demo, เผยแพร่โค้ดและผลการวัด</td></tr>
+</table>
+<p><b>ส่งมอบ:</b> (1) source code ของ mini EDR แบบ open source · (2) เอกสารภาษาไทยอธิบายเส้นทาง syscall → VFS → MACF → EndpointSecurity · (3) coverage matrix พร้อมวิธีทำซ้ำการทดลอง · (4) รายงานและ demo ที่รัน detection ได้จริงบนเครื่องทดสอบ</p>
+
+<div class="foot">หมายเหตุด้านจริยธรรม: โปรเจกต์นี้เป็นงานฝ่ายป้องกัน ตัวอย่างพฤติกรรมที่ใช้ทดสอบเป็นโปรแกรมจำลองที่เขียนขึ้นเองและรันเฉพาะใน VM ที่แยกออกจากเครือข่าย ไม่มีการสร้างหรือเผยแพร่มัลแวร์</div>
+
+</body>
+</html>

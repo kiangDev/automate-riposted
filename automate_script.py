@@ -318,7 +318,7 @@ def fill_edit(window, value, timeout=5, force_type_keys=False, **criteria):
         raise
 
 
-def handle_repeat_transaction_alert(window, timeout=5):
+def handle_repeat_transaction_alert(window, timeout=10):
     """
     หลังกด Home (auto_id=HOME_AUTO_ID) ถ้าเพิ่งทำรายการก่อนหน้าสำเร็จ แอปจะ
     ถาม Alert "ทำรายการซ้ำโดยใช้ข้อมูลเดิมไหม"
@@ -396,7 +396,7 @@ def wait_for_alert_or_next_page(
     window,
     alert_criteria,
     safe_criteria,
-    timeout=4,
+    timeout=10,
     poll_interval=0.3,
     settle_seconds=1.0,
 ):
@@ -445,7 +445,7 @@ def wait_for_alert_or_next_page(
     return "timeout"
 
 
-def handle_dangerous_goods_question(window, timeout=1.5):
+def handle_dangerous_goods_question(window, timeout=5):
     """
     หน้าคำถามสินค้าอันตราย (EG.Shipping.DangerousGoodsQuestion) จะแทรกโผล่มา
     หลังเลือกกล่องเสร็จ ไม่ได้โผล่ทุกครั้งแน่นอน (ยังไม่ยืนยัน) เลยเช็คก่อนว่า
@@ -471,7 +471,7 @@ def handle_dangerous_goods_question(window, timeout=1.5):
         click_next(window)
 
 
-def handle_postcode_overlap_alert(window, timeout=4):
+def handle_postcode_overlap_alert(window, timeout=10):
     """
     หลังกรอกรหัสไปรษณีย์ที่หน้า "Destination" (EG.Shipping.Destination,
     ช่อง auto_id="PostCodeDestination") บางครั้งรหัสที่พิมพ์ครอบคลุมหลาย
@@ -509,7 +509,7 @@ def handle_postcode_overlap_alert(window, timeout=4):
         
 
 
-def handle_customer_capture_postal_code_alert(window, timeout=4):
+def handle_customer_capture_postal_code_alert(window, timeout=5):
     """
     Alert คนละตัวกับ handle_postcode_overlap_alert() ด้านบน -- ตัวนี้โผล่
     ขึ้นมาที่หน้า "ข้อมูลผู้ส่ง/ผู้รับ" (EG.CustomerCapture.CustomerCaptureView)
@@ -564,7 +564,7 @@ def click_next(window):
             auto_id=SUBMIT_AUTO_ID,
             control_type="Button",
             wait_states="exists visible",
-            timeout=3 ,
+            timeout=10 ,
         )
     except Exception:
         print("[DEBUG] ไม่พบปุ่มด้วย auto_id, ลอง fallback เป็น title_re='ถัดไป'")
@@ -634,7 +634,7 @@ def click_next_verified(window, max_attempts=3, settle_time=0.5):
     return False
 
 
-def report_validation_errors(window, timeout=1):
+def report_validation_errors(window, timeout=10):
     """
     บางหน้า (เช่น ข้อมูลผู้รับ) มี ListBox auto_id="ValidationErrors" ที่โชว์
     ข้อความ error ถ้ากรอกข้อมูลไม่ครบ/ไม่ผ่าน validation -- เช็คแบบเบาๆ
@@ -708,7 +708,7 @@ def recover_address_search_page(window):
     print("[DEBUG] กด Esc ย้อนกลับแล้วกลับเข้าหน้าค้นหาที่อยู่ใหม่ (ตามที่ผู้ใช้ยืนยันว่าจำเป็น)")
     try:
         wait_and_click(
-            window, auto_id=PREVIOUS_AUTO_ID, control_type="Button", timeout=3
+            window, auto_id=PREVIOUS_AUTO_ID, control_type="Button", timeout=10
         )
     except Exception as error:
         print(f"[WARNING] กดย้อนกลับไม่สำเร็จ: {error}")
@@ -771,7 +771,7 @@ def search_and_select_address(
                         control_type="ListItem", found_index=0
                     )
                     if is_control_visible(
-                        address_result_group, timeout=1, control_type="ListItem", found_index=0
+                        address_result_group, timeout=10, control_type="ListItem", found_index=0
                     ):
                         first_address_result.wrapper_object().click_input()
                         print(
@@ -876,7 +876,7 @@ def validate_csv_headers(fieldnames):
 
 
 
-def is_control_visible(window, timeout=1.5, **criteria):
+def is_control_visible(window, timeout=10, **criteria):
     """เช็คว่า control ปรากฏอยู่จริงหรือไม่ โดยไม่ throw ถ้าไม่เจอ"""
     try:
         control = window.child_window(**criteria)
@@ -886,7 +886,7 @@ def is_control_visible(window, timeout=1.5, **criteria):
         return False
 
 
-def wait_for_loading_overlay_to_clear(window, timeout=6, poll_interval=0.3):
+def wait_for_loading_overlay_to_clear(window, timeout=10, poll_interval=0.3):
     """
     แก้: รอให้ overlay "กรุณารอสักครู่" (auto_id=LOADING_OVERLAY_AUTO_ID)
     หายไปก่อน ค่อยไปแตะ control อื่นต่อ -- ยืนยันจาก controls dump จริงแล้ว
@@ -964,7 +964,7 @@ def wait_for_success(window, timeout=SUCCESS_WAIT_TIMEOUT):
     return False
 
 
-def capture_tracking_number(window, timeout=5):
+def capture_tracking_number(window, timeout=10):
     """
     แก้: เดิมอ่านจาก auto_id="SummaryView" แต่ยืนยันจาก dump จริงแล้วว่าพอ
     กลับมาหน้า Menu.MainMenu (สัญญาณความสำเร็จตัวใหม่ ดู wait_for_success())
@@ -1028,7 +1028,7 @@ def recover_ui(main_window, max_attempts=5):
 
         if is_control_visible(
             main_window,
-            timeout=1,
+            timeout=10,
             auto_id=HOME_AUTO_ID,
             control_type=HOME_CONTROL_TYPE,
         ):
@@ -1040,12 +1040,12 @@ def recover_ui(main_window, max_attempts=5):
             home_button = main_window.child_window(
                 auto_id=HOME_BUTTON_AUTO_ID, control_type="Button"
             )
-            home_button.wait("exists visible", timeout=2)
+            home_button.wait("exists visible", timeout=10)
             home_button.wrapper_object().click_input()
 
             if is_control_visible(
                 main_window,
-                timeout=2,
+                timeout=10,
                 auto_id=HOME_AUTO_ID,
                 control_type=HOME_CONTROL_TYPE,
             ):
@@ -1105,7 +1105,7 @@ def main():
             auto_id="ECPMainWindow", timeout=5, visible_only=True
         )
         main_window = app.window(auto_id="ECPMainWindow", visible_only=True)
-        main_window.wait("exists visible", timeout=5)
+        main_window.wait("exists visible", timeout=10)
         main_window.set_focus()
         export_controls(main_window)
 
@@ -1199,7 +1199,7 @@ def main():
                         # เสร็จ ทำให้จุดนี้เป็นจุดที่รอนานที่สุดตอนวนรอบใหม่
                         # -- ผู้ใช้สังเกตเจอ ยืนยันแล้วว่าไม่จำเป็นต้องรอ
                         # enabled จริงๆ)
-                        main_window.wait("exists visible", timeout=5)
+                        main_window.wait("exists visible", timeout=10)
                         main_window.set_focus()
 
                         # แก้: ผู้ใช้รายงานว่าบางครั้งกดปุ่ม "Shipping"/"หน้าหลัก"
@@ -1271,7 +1271,7 @@ def main():
                                 "auto_id": SUBMIT_AUTO_ID,
                                 "control_type": "Button",
                             },
-                            timeout=1.5,
+                            timeout=5,
                         )
                         if race_result == "alert":
                             handle_dangerous_goods_question(main_window)
