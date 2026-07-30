@@ -509,7 +509,7 @@ def handle_postcode_overlap_alert(window, timeout=10):
         
 
 
-def handle_customer_capture_postal_code_alert(window, timeout=5):
+def handle_customer_capture_postal_code_alert(window, timeout=4):
     """
     Alert คนละตัวกับ handle_postcode_overlap_alert() ด้านบน -- ตัวนี้โผล่
     ขึ้นมาที่หน้า "ข้อมูลผู้ส่ง/ผู้รับ" (EG.CustomerCapture.CustomerCaptureView)
@@ -634,12 +634,18 @@ def click_next_verified(window, max_attempts=3, settle_time=0.5):
     return False
 
 
-def report_validation_errors(window, timeout=10):
+def report_validation_errors(window, timeout=1):
     """
     บางหน้า (เช่น ข้อมูลผู้รับ) มี ListBox auto_id="ValidationErrors" ที่โชว์
     ข้อความ error ถ้ากรอกข้อมูลไม่ครบ/ไม่ผ่าน validation -- เช็คแบบเบาๆ
     (timeout สั้น) หลังกด submit เผื่อมี จะได้ print ออกมาให้เห็นเลยว่าขาด
     ช่องไหน แทนที่จะต้องเดา/ขอ dump ใหม่ทุกครั้ง ไม่เจอก็ผ่านไปเงียบๆ
+
+    แก้: ผู้ใช้เผลอแก้ default เป็น 10 (เพิ่ม timeout เกือบทุกจุดทีเดียวเพราะ
+    กลัว error) แต่ ValidationErrors ไม่ขึ้นแทบทุกแถว (เช็คของที่มักไม่มี) จุด
+    นี้ไม่มี race-guard เหมือนจุด Alert อื่นๆ ในไฟล์นี้ -- รอเต็ม timeout ทุก
+    แถวจริง เปลี่ยนกลับเป็น 1 ตามที่ docstring เดิมตั้งใจไว้ (เช็คเบาๆ) ไม่งั้น
+    เสียเวลาเปล่า ~9 วิ/แถว x ~1,888 แถว ≈ 4.7 ชั่วโมงทิ้งเปล่าทั้งรัน
     """
     try:
         error_list = window.child_window(auto_id="ValidationErrors", control_type="List")
