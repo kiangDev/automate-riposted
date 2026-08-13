@@ -241,6 +241,11 @@ def select_list_item(window, timeout=10, max_attempts=2, **criteria):
     (สูงสุด max_attempts ครั้ง) -- ถ้า .select()/is_selected() ใช้ไม่ได้กับ
     control นี้ (บาง custom control ไม่รองรับ pattern นี้เต็มรูปแบบ) จะ
     fallback ไปใช้ click_input() แบบเดิมแทนโดยไม่ throw
+
+    แก้: ผู้ใช้ทดสอบด้วยมือจริงเพิ่มเติมแล้วเจอว่า -- ต้อง "กดกล่อง 2 ครั้ง"
+    ถึงจะติดสถานะเลือกจริง (ครั้งแรกแค่โฟกัส/ไฮไลท์ ยังไม่ถือว่าเลือก) เรียก
+    การเลือก (select()/click_input()) 2 รอบติดกันเสมอ ไม่ใช่แค่ 1 ครั้ง ให้
+    ตรงกับพฤติกรรมจริงที่ผู้ใช้ยืนยันมา แล้วค่อยเช็ค is_selected()
     """
     last_error = None
     for attempt in range(1, max_attempts + 1):
@@ -249,15 +254,21 @@ def select_list_item(window, timeout=10, max_attempts=2, **criteria):
             control.wait("exists visible", timeout=timeout)
             wrapper = control.wrapper_object()
 
-            try:
-                wrapper.select()
-                print(f"[DEBUG] เลือก ListItem ผ่าน SelectionItemPattern สำเร็จ (รอบที่ {attempt})")
-            except Exception as select_error:
-                print(
-                    f"[DEBUG] .select() ใช้ไม่ได้ ({select_error}) "
-                    "-> fallback เป็น click_input() แบบเดิม"
-                )
-                wrapper.click_input()
+            # แก้: กด 2 ครั้งติดกันตามที่ผู้ใช้ยืนยันจากการทดสอบด้วยมือจริง
+            for click_round in range(1, 3):
+                try:
+                    wrapper.select()
+                    print(
+                        f"[DEBUG] เลือก ListItem ผ่าน SelectionItemPattern "
+                        f"สำเร็จ (รอบที่ {attempt}, กดครั้งที่ {click_round}/2)"
+                    )
+                except Exception as select_error:
+                    print(
+                        f"[DEBUG] .select() ใช้ไม่ได้ ({select_error}) "
+                        "-> fallback เป็น click_input() แบบเดิม"
+                    )
+                    wrapper.click_input()
+                time.sleep(0.1)
 
             try:
                 if wrapper.is_selected():
