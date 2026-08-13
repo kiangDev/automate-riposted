@@ -223,6 +223,68 @@ def wait_and_click(window, timeout=10, wait_states="exists visible enabled", **c
         raise
 
 
+def select_list_item(window, timeout=10, max_attempts=2, **criteria):
+    """
+    แก้: เจอบั๊กจริงที่ผู้ใช้ยืนยันด้วยมือแล้ว (ลองคลิกกล่อง+กด "ถัดไป" เอง)
+    -- เดิม wait_and_click() เลือกกล่อง (control_type="ListItem") ด้วย
+    click_input() ธรรมดา (คลิกที่พิกัดจอ) แล้ว log บอกว่ากด "ถัดไป" สำเร็จ 2
+    ครั้งติด แต่หน้าจอไม่เปลี่ยนไปไหนเลย (ยืนยันจาก controls dump ตอน fail
+    ด้วยว่ายังค้างอยู่หน้าเดิม "EG.Shipping.MailPieceCategory") -- สาเหตุคือ
+    click_input() คลิกที่พิกัดจอตรงๆ ของ ListItem ที่มี Custom/Static ซ้อน
+    กันหลายชั้นข้างใน ไม่ได้การันตีว่าจะ trigger SelectionItemPattern ให้
+    ติดสถานะ "เลือกแล้ว" จริงในแอป (ทั้งที่ pywinauto รายงานว่าคลิกสำเร็จ)
+    กด "ถัดไป" ไปเลยไม่ผ่าน validation เงียบๆ
+
+    เปลี่ยนมาเรียก .select() ผ่าน UI Automation SelectionItemPattern ตรงๆ
+    แทน (ไม่พึ่งพิกัดจอเลย ไม่มีปัญหาเรื่อง child element บังพิกัด) แล้วเช็ค
+    ยืนยันด้วย is_selected() ว่าติดสถานะจริงก่อนไปต่อ ถ้าไม่ติด ลองใหม่
+    (สูงสุด max_attempts ครั้ง) -- ถ้า .select()/is_selected() ใช้ไม่ได้กับ
+    control นี้ (บาง custom control ไม่รองรับ pattern นี้เต็มรูปแบบ) จะ
+    fallback ไปใช้ click_input() แบบเดิมแทนโดยไม่ throw
+    """
+    last_error = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            control = window.child_window(**criteria)
+            control.wait("exists visible", timeout=timeout)
+            wrapper = control.wrapper_object()
+
+            try:
+                wrapper.select()
+                print(f"[DEBUG] เลือก ListItem ผ่าน SelectionItemPattern สำเร็จ (รอบที่ {attempt})")
+            except Exception as select_error:
+                print(
+                    f"[DEBUG] .select() ใช้ไม่ได้ ({select_error}) "
+                    "-> fallback เป็น click_input() แบบเดิม"
+                )
+                wrapper.click_input()
+
+            try:
+                if wrapper.is_selected():
+                    return wrapper
+                print(
+                    f"[DEBUG] เลือกแล้วแต่ is_selected()=False (รอบที่ "
+                    f"{attempt}/{max_attempts}) -> ลองใหม่"
+                )
+                last_error = RuntimeError("is_selected() คืนค่า False หลังเลือก")
+            except Exception:
+                # แก้: บาง control ไม่รองรับ is_selected() เลย -- ถือว่า
+                # เลือกสำเร็จถ้าไม่มี error ตอนเรียก select()/click_input()
+                return wrapper
+
+        except Exception as error:
+            last_error = error
+            print(f"[DEBUG] เลือก ListItem ไม่สำเร็จ (รอบที่ {attempt}/{max_attempts}): {error}")
+
+    print(f"[ERROR] เลือก ListItem ไม่ติดสถานะ 'เลือกแล้ว' หลังลอง {max_attempts} ครั้ง: {criteria}")
+    tag = criteria.get("title_re") or criteria.get("title") or criteria.get("auto_id") or "unknown"
+    safe_tag = "".join(ch for ch in str(tag) if ch.isalnum())[:30] or "unknown"
+    dump_controls_on_failure(window, safe_tag)
+    if last_error:
+        raise last_error
+    raise RuntimeError(f"เลือก ListItem ไม่สำเร็จ: {criteria}")
+
+
 def resolve_edit_wrapper(wrapper, timeout=1.5):
     """
     ยืนยันจาก controls dump หน้ากรอกน้ำหนัก (EG.Shipping.Weight) แล้วว่า
@@ -315,6 +377,13 @@ def fill_edit(window, value, timeout=5, force_type_keys=False, **criteria):
         print(f"[ERROR] กรอกข้อมูลไม่สำเร็จ: {criteria}")
         print(f"[ERROR] ค่าที่ต้องการกรอก: {value!r}")
         print(f"[ERROR] {type(error).__name__}: {error}")
+        # แก้: fill_edit() เดิมไม่เคย dump control tree ตอน fail เลย (ต่างจาก
+        # wait_and_click ที่มี dump_controls_on_failure() อยู่แล้ว) ทำให้ตอน
+        # กรอกช่อง "น้ำหนัก" fail รัวๆ ทุกแถว ไม่มีไฟล์ให้ตรวจว่าตอนนั้นค้าง
+        # อยู่หน้าไหนจริงๆ เพิ่ม dump ตรงนี้ด้วยเพื่อให้เห็นหลักฐานรอบหน้า
+        tag = criteria.get("title_re") or criteria.get("title") or criteria.get("auto_id") or "unknown"
+        safe_tag = "".join(ch for ch in str(tag) if ch.isalnum())[:30] or "unknown"
+        dump_controls_on_failure(window, safe_tag)
         raise
 
 
@@ -1250,37 +1319,43 @@ def main():
                         # เอง) กลับมาที่จุดนี้เหมือนเดิม
                         handle_repeat_transaction_alert(main_window)
 
-                        wait_and_click(
+                        # แก้: เจอบั๊กจริงที่ผู้ใช้ยืนยันด้วยมือ -- คลิกด้วย
+                        # click_input() ธรรมดา (ผ่าน wait_and_click) แล้วกด
+                        # "ถัดไป" ต่อ หน้าจอไม่เปลี่ยนไปไหนเลย ใช้
+                        # select_list_item() แทน (ดูคอมเมนต์เต็มที่ฟังก์ชันนั้น
+                        # ด้านบน -- เลือกผ่าน SelectionItemPattern ตรงๆ ไม่พึ่ง
+                        # พิกัดจอ พร้อมยืนยันว่าเลือกติดจริงก่อนไปต่อ)
+                        select_list_item(
                             main_window,
                             auto_id=BOX_TYPE_AUTO_ID,
                             control_type="ListItem",
-                            wait_states="exists visible",
                         )
 
-                        click_next(main_window)  # ถัดไป (หลังเลือกกล่อง)
+                        # แก้: เพิ่มชั้นป้องกันอีกชั้น (defense-in-depth) ใช้
+                        # click_next_verified() แทน click_next() ธรรมดา --
+                        # เช็คว่าหน้าเปลี่ยนจริงหลังกด ถ้าไม่เปลี่ยนจะลองกดซ้ำ
+                        # เอง (เผื่อกรณีอื่นที่ select_list_item() แก้ปัญหา
+                        # หลักไปแล้วแต่ยังมีเคสขอบๆ ที่หน้าไม่ขยับอีก)
+                        click_next_verified(main_window)  # ถัดไป (หลังเลือกกล่อง)
 
-                        # แก้: ผล audit หาจุดช้าทั้งไฟล์ -- race หน้าคำถาม
-                        # สินค้าอันตราย (ถ้ามี) เทียบกับปุ่ม SUBMIT_AUTO_ID ที่
-                        # ต้องกดต่ออยู่แล้วไม่ว่าจะมีหน้านี้หรือไม่ (ดู
-                        # wait_for_alert_or_next_page ด้านบน) แทนที่จะรอเต็ม
-                        # timeout=1.5 ของ handle_dangerous_goods_question()
-                        # ทุกแถวที่ไม่มีหน้านี้ (ส่วนใหญ่ -- หน้านี้ข้ามไปเลย
-                        # ถ้าเพิ่งตอบ Yes ที่ Alert ทำรายการซ้ำ) พฤติกรรม
-                        # ตอนเจอ/ไม่เจอยังเหมือนเดิมทุกอย่าง แค่ไม่ต้องรอเปล่า
-                        race_result = wait_for_alert_or_next_page(
-                            main_window,
-                            alert_criteria={
-                                "auto_id": DANGEROUS_GOODS_ANSWER_AUTO_ID,
-                                "control_type": "Button",
-                            },
-                            safe_criteria={
-                                "auto_id": SUBMIT_AUTO_ID,
-                                "control_type": "Button",
-                            },
-                            timeout=5,
-                        )
-                        if race_result == "alert":
-                            handle_dangerous_goods_question(main_window)
+                        # แก้: ยกเลิก race-guard ที่เพิ่มไว้ตอน audit หาจุดช้า
+                        # ทั้งไฟล์ -- เจอบั๊กจริงจากผู้ใช้ทดสอบ: กด Confirmed
+                        # ถูกต้องแล้ว แต่กลับมี warning ขึ้นแล้วเด้งกลับหน้าแรก
+                        # สาเหตุคือ SUBMIT_AUTO_ID ("LocalCommand_Submit") ที่
+                        # ใช้เป็น safe_criteria ไม่ใช่สัญญาณเฉพาะหน้านี้จริงๆ --
+                        # ยืนยันจาก controls dump จริงแล้วว่าปุ่ม "ยืนยัน"
+                        # (LocalCommand_Submit) เป็นปุ่ม footer ที่ติดอยู่ทุกหน้า
+                        # เสมอ (รวมถึงหน้าคำถามสินค้าอันตรายเองด้วย ที่มีทั้ง
+                        # Declined/Confirmed และ LocalCommand_Submit โผล่พร้อม
+                        # กัน) เท่ากับ race นี้เจอ "safe" เกือบทันทีทุกครั้ง
+                        # (ไม่ว่าจะอยู่หน้าคำถามจริงหรือไม่) เลยข้ามการเรียก
+                        # handle_dangerous_goods_question() ไปกด Submit ตรงๆ
+                        # โดยยังไม่ได้ตอบคำถามเคลิร์กก่อน -- ต่างจากจุด race
+                        # อื่นที่ปลอดภัย (SHIPPING_SERVICE_AUTO_ID, ปุ่ม "ไม่")
+                        # เพราะสองจุดนั้นเป็น control เฉพาะหน้าจริงๆ ไม่ใช่
+                        # ปุ่ม footer สากลแบบนี้ -- กลับไปเรียกแบบตรงไปตรงมา
+                        # เหมือนเดิม (ยอมเสียเวลาส่วนนี้ไปเพื่อความถูกต้อง)
+                        handle_dangerous_goods_question(main_window)
 
                         click_next(main_window)  # ยืนยัน (ปุ่มเดียวกัน auto_id)
 
