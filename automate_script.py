@@ -103,6 +103,17 @@ ADDRESS_SEARCH_INPUT_AUTO_ID = "EG.CustomerCapture.AddressSearchInputView"
 # แล้วไม่เคยตรวจสอบ)
 BOX_TYPE_AUTO_ID = "MailPieceShape_9"
 
+# แก้: เจอจาก controls dump จริงแล้วว่าหลังเลือกกล่องสำเร็จรูป (ข้างบน) และ
+# กด "ถัดไป" แล้ว มีอีกหน้าแทรกมาที่ไม่เคยรู้จักมาก่อน -- pane auto_id=
+# "EG.Shipping.MailPieceShape" (คนละหน้ากับ "EG.Shipping.MailPieceCategory"
+# ที่ BOX_TYPE_AUTO_ID ด้านบนอยู่ แม้จะใช้ prefix "MailPieceShape_" ซ้ำกัน
+# ก็ตาม) หน้านี้มี 2 ตัวเลือก: auto_id="MailPieceShape_ModelId-303" กับ
+# "...-326" ผู้ใช้ยืนยันแล้วว่าเลือก -303 (กล่องที่ใช้จริง) และมี
+# ScrollBar/GroupBox "MailPieceShapeSelectionErrorMessage" แสดง error ถ้า
+# กด "ถัดไป" โดยยังไม่ได้เลือกอะไรในหน้านี้ก่อน (นี่คือสาเหตุที่ค้างอยู่หน้า
+# นี้มาตลอด เพราะโค้ดเดิมไม่เคยรู้จักหน้านี้เลย ข้ามไปกด "ถัดไป" ตรงๆ)
+MAILPIECE_SHAPE_VARIANT_AUTO_ID = "MailPieceShape_ModelId-303"
+
 # ปุ่ม "ถัดไป"/"ยืนยัน" (ปุ่มหลักของแต่ละหน้า, hotkey ENTER) และ
 # ปุ่ม "ย้อนกลับ" (hotkey ESC) -- สังเกตจาก controls dump ว่าใช้ auto_id
 # เดียวกันซ้ำทุกหน้าจอ (LocalCommand_*) ต่างกันแค่ label ข้อความ
@@ -1348,6 +1359,24 @@ def main():
                         # เอง (เผื่อกรณีอื่นที่ select_list_item() แก้ปัญหา
                         # หลักไปแล้วแต่ยังมีเคสขอบๆ ที่หน้าไม่ขยับอีก)
                         click_next_verified(main_window)  # ถัดไป (หลังเลือกกล่อง)
+
+                        # แก้: ผู้ใช้ส่ง controls dump จริงมาแล้วยืนยันว่ามีหน้า
+                        # แทรกใหม่ตรงนี้ (pane auto_id="EG.Shipping.
+                        # MailPieceShape") ที่โค้ดไม่เคยรู้จักมาก่อนเลย ทำให้
+                        # กด "ถัดไป" ไปแล้วโดน MailPieceShapeSelectionError
+                        # Message เตือนแล้วค้างอยู่หน้าเดิม -- เลือก
+                        # MailPieceShape_ModelId-303 (ยืนยันจากผู้ใช้ว่าคือ
+                        # กล่องที่ใช้จริง) ด้วย select_list_item() เดียวกับที่
+                        # ใช้แก้หน้าเลือกกล่องไปแล้ว จากนั้นกด "ถัดไป" ผ่าน
+                        # กลุ่มคุณลักษณะพัสดุ (LQ/FR/LI/AN/SO/BO) ที่โผล่มาบน
+                        # หน้าเดียวกันได้เลยโดยไม่ต้องเลือกอะไร (ผู้ใช้ยืนยัน
+                        # แล้วว่า "ไม่ใช้ครับ แค่กดถัดไป")
+                        select_list_item(
+                            main_window,
+                            auto_id=MAILPIECE_SHAPE_VARIANT_AUTO_ID,
+                            control_type="ListItem",
+                        )
+                        click_next_verified(main_window)  # ถัดไป (ข้ามกลุ่มคุณลักษณะพัสดุ)
 
                         # แก้: ยกเลิก race-guard ที่เพิ่มไว้ตอน audit หาจุดช้า
                         # ทั้งไฟล์ -- เจอบั๊กจริงจากผู้ใช้ทดสอบ: กด Confirmed
