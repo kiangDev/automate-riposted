@@ -236,7 +236,7 @@ def wait_and_click(window, timeout=10, wait_states="exists visible enabled", **c
 
 def select_list_item(window, timeout=10, max_attempts=2, **criteria):
     control = window.child_window(**criteria)
-    control.wait("exists visible enabled", timeout=timeout)
+    control.wait("exists visible", timeout=timeout)
     wrapper = control.wrapper_object()
 
     print(
