@@ -234,76 +234,85 @@ def wait_and_click(window, timeout=10, wait_states="exists visible enabled", **c
         raise
 
 
-def select_list_item(window, timeout=20, max_attempts=2, **criteria):
-    """
-    แก้: เจอบั๊กจริงที่ผู้ใช้ยืนยันด้วยมือแล้ว (ลองคลิกกล่อง+กด "ถัดไป" เอง)
-    -- เดิม wait_and_click() เลือกกล่อง (control_type="ListItem") ด้วย
-    click_input() ธรรมดา (คลิกที่พิกัดจอ) แล้ว log บอกว่ากด "ถัดไป" สำเร็จ 2
-    ครั้งติด แต่หน้าจอไม่เปลี่ยนไปไหนเลย (ยืนยันจาก controls dump ตอน fail
-    ด้วยว่ายังค้างอยู่หน้าเดิม "EG.Shipping.MailPieceCategory") -- สาเหตุคือ
-    click_input() คลิกที่พิกัดจอตรงๆ ของ ListItem ที่มี Custom/Static ซ้อน
-    กันหลายชั้นข้างใน ไม่ได้การันตีว่าจะ trigger SelectionItemPattern ให้
-    ติดสถานะ "เลือกแล้ว" จริงในแอป (ทั้งที่ pywinauto รายงานว่าคลิกสำเร็จ)
-    กด "ถัดไป" ไปเลยไม่ผ่าน validation เงียบๆ
-
-    เปลี่ยนมาเรียก .select() ผ่าน UI Automation SelectionItemPattern ตรงๆ
-    แทน (ไม่พึ่งพิกัดจอเลย ไม่มีปัญหาเรื่อง child element บังพิกัด) แล้วเช็ค
-    ยืนยันด้วย is_selected() ว่าติดสถานะจริงก่อนไปต่อ ถ้าไม่ติด ลองใหม่
-    (สูงสุด max_attempts ครั้ง) -- ถ้า .select()/is_selected() ใช้ไม่ได้กับ
-    control นี้ (บาง custom control ไม่รองรับ pattern นี้เต็มรูปแบบ) จะ
-    fallback ไปใช้ click_input() แบบเดิมแทนโดยไม่ throw
-
-    แก้: ผู้ใช้ทดสอบด้วยมือจริงเพิ่มเติมแล้วเจอว่า -- ต้อง "กดกล่อง 2 ครั้ง"
-    ถึงจะติดสถานะเลือกจริง (ครั้งแรกแค่โฟกัส/ไฮไลท์ ยังไม่ถือว่าเลือก) เรียก
-    การเลือก (select()/click_input()) 2 รอบติดกันเสมอ ไม่ใช่แค่ 1 ครั้ง ให้
-    ตรงกับพฤติกรรมจริงที่ผู้ใช้ยืนยันมา แล้วค่อยเช็ค is_selected()
-    """
+def select_list_item(window, timeout=10, max_attempts=2, **criteria):
     last_error = None
+
     for attempt in range(1, max_attempts + 1):
         try:
             control = window.child_window(**criteria)
-            control.wait("exists visible", timeout=timeout)
+            control.wait("exists visible enabled", timeout=timeout)
             wrapper = control.wrapper_object()
 
-            # แก้: กด 2 ครั้งติดกันตามที่ผู้ใช้ยืนยันจากการทดสอบด้วยมือจริง
             for click_round in range(1, 3):
                 try:
                     wrapper.select()
                     print(
-                        f"[DEBUG] เลือก ListItem ผ่าน SelectionItemPattern "
-                        f"สำเร็จ (รอบที่ {attempt}, กดครั้งที่ {click_round}/2)"
+                        f"[DEBUG] select() สำเร็จ "
+                        f"(attempt {attempt}/{max_attempts}, "
+                        f"ครั้งที่ {click_round}/2)"
                     )
                 except Exception as select_error:
                     print(
                         f"[DEBUG] .select() ใช้ไม่ได้ ({select_error}) "
-                        "-> fallback เป็น click_input() แบบเดิม"
+                        "-> fallback click_input()"
                     )
                     wrapper.click_input()
+
                 time.sleep(0.1)
 
-            try:
-                if wrapper.is_selected():
-                    return wrapper
-                print(
-                    f"[DEBUG] เลือกแล้วแต่ is_selected()=False (รอบที่ "
-                    f"{attempt}/{max_attempts}) -> ลองใหม่"
-                )
-                last_error = RuntimeError("is_selected() คืนค่า False หลังเลือก")
-            except Exception:
-                # แก้: บาง control ไม่รองรับ is_selected() เลย -- ถือว่า
-                # เลือกสำเร็จถ้าไม่มี error ตอนเรียก select()/click_input()
-                return wrapper
+                # เช็คหลังทุกครั้ง
+                try:
+                    if wrapper.is_selected():
+                        print(
+                            f"[DEBUG] ListItem ติดสถานะเลือกแล้ว "
+                            f"(ครั้งที่ {click_round}/2)"
+                        )
+                        return wrapper
+                except Exception:
+                    # control บางตัวไม่มี SelectionItemPattern
+                    if click_round == 2:
+                        print(
+                            "[DEBUG] control ไม่รองรับ is_selected() "
+                            "แต่กดครบ 2 ครั้งแล้ว -> ถือว่าสำเร็จ"
+                        )
+                        return wrapper
+
+            last_error = RuntimeError(
+                "is_selected() ยังเป็น False หลังพยายามเลือก 2 ครั้ง"
+            )
+
+            print(
+                f"[DEBUG] ยังเลือกไม่สำเร็จ "
+                f"(attempt {attempt}/{max_attempts}) -> ลองใหม่"
+            )
 
         except Exception as error:
             last_error = error
-            print(f"[DEBUG] เลือก ListItem ไม่สำเร็จ (รอบที่ {attempt}/{max_attempts}): {error}")
+            print(
+                f"[DEBUG] เลือก ListItem ไม่สำเร็จ "
+                f"(attempt {attempt}/{max_attempts}): {error}"
+            )
 
-    print(f"[ERROR] เลือก ListItem ไม่ติดสถานะ 'เลือกแล้ว' หลังลอง {max_attempts} ครั้ง: {criteria}")
-    tag = criteria.get("title_re") or criteria.get("title") or criteria.get("auto_id") or "unknown"
-    safe_tag = "".join(ch for ch in str(tag) if ch.isalnum())[:30] or "unknown"
+    print(
+        f"[ERROR] เลือก ListItem ไม่ติดสถานะหลังลอง "
+        f"{max_attempts} attempts: {criteria}"
+    )
+
+    tag = (
+        criteria.get("title_re")
+        or criteria.get("title")
+        or criteria.get("auto_id")
+        or "unknown"
+    )
+    safe_tag = "".join(
+        ch for ch in str(tag) if ch.isalnum()
+    )[:30] or "unknown"
+
     dump_controls_on_failure(window, safe_tag)
+
     if last_error:
         raise last_error
+
     raise RuntimeError(f"เลือก ListItem ไม่สำเร็จ: {criteria}")
 
 
@@ -536,7 +545,7 @@ def wait_for_alert_or_next_page(
     return "timeout"
 
 
-def handle_dangerous_goods_question(window, timeout=5):
+def handle_dangerous_goods_question(window, timeout=10):
     """
     หน้าคำถามสินค้าอันตราย (EG.Shipping.DangerousGoodsQuestion) จะแทรกโผล่มา
     หลังเลือกกล่องเสร็จ ไม่ได้โผล่ทุกครั้งแน่นอน (ยังไม่ยืนยัน) เลยเช็คก่อนว่า
