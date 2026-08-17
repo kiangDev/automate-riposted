@@ -113,6 +113,7 @@ BOX_TYPE_AUTO_ID = "MailPieceShape_9"
 # กด "ถัดไป" โดยยังไม่ได้เลือกอะไรในหน้านี้ก่อน (นี่คือสาเหตุที่ค้างอยู่หน้า
 # นี้มาตลอด เพราะโค้ดเดิมไม่เคยรู้จักหน้านี้เลย ข้ามไปกด "ถัดไป" ตรงๆ)
 MAILPIECE_SHAPE_VARIANT_AUTO_ID = "MailPieceShape_ModelId-303"
+MAILPIECE_SHAPE_PAGE_AUTO_ID = "EG.Shipping.MailPieceShape"
 
 # ปุ่ม "ถัดไป"/"ยืนยัน" (ปุ่มหลักของแต่ละหน้า, hotkey ENTER) และ
 # ปุ่ม "ย้อนกลับ" (hotkey ESC) -- สังเกตจาก controls dump ว่าใช้ auto_id
@@ -126,8 +127,9 @@ HOME_BUTTON_AUTO_ID = "LocalCommand_Home"
 # หน้าคำถาม "สินค้าอันตราย" (EG.Shipping.DangerousGoodsQuestion) ที่แทรกมา
 # หลังเลือกกล่องเสร็จ ยืนยันจาก controls dump แล้วว่ามีปุ่มตอบ 2 ปุ่ม:
 # auto_id="Declined" กับ auto_id="Confirmed"
-# ความหมายจริง (ยืนยันกับผู้ใช้แล้ว): "Confirmed" = ยืนยันว่า "ไม่มี"
-# สินค้าอันตราย ใช้ปุ่มนี้เป็นค่า default สำหรับพัสดุทั่วไป
+# ผู้ใช้ยืนยันจากการทดสอบกับโปรแกรมจริงว่าค่าที่ต้องการใน flow นี้คือ "Confirmed"
+# จึงล็อก selector ด้วย auto_id โดยตรงและ scope ผ่านหน้า DangerousGoodsQuestion
+DANGEROUS_GOODS_PAGE_AUTO_ID = "EG.Shipping.DangerousGoodsQuestion"
 DANGEROUS_GOODS_ANSWER_AUTO_ID = "Confirmed"
 
 # หน้าเลือกบริการ (EG.Shipping.Services) มีบริการ ~39 ตัวเรียงเลื่อนซ้าย-ขวา
@@ -234,60 +236,125 @@ def wait_and_click(window, timeout=10, wait_states="exists visible enabled", **c
         raise
 
 
-def select_list_item(window, timeout=10, max_attempts=2, **criteria):
+def select_list_item(window, timeout=10, **criteria):
+    """
+    คลิก ListItem ของ Riposte 1 ครั้งด้วย click_input().
+
+    Riposte custom ListItem ที่พบจริงไม่รองรับ SelectionItemPattern อย่างเสถียร
+    (.select() / .is_selected() ใช้ไม่ได้ใน log จริง) จึงไม่ใช้สอง method นี้แล้ว
+    และไม่ double-click แบบตายตัว เพราะบางหน้าคลิกครั้งแรกก็เลือกสำเร็จได้เลย
+
+    ถ้าหน้าใดต้องคลิกมากกว่า 1 ครั้ง ให้ผู้เรียกใช้
+    select_list_item_and_advance() ซึ่งจะคลิก 1 ครั้ง -> Submit -> ตรวจว่าหน้า
+    เปลี่ยนจริง ถ้ายังไม่เปลี่ยนจึงค่อยลองคลิกใหม่อย่างมีหลักฐาน
+    """
     control = window.child_window(**criteria)
     control.wait("exists visible", timeout=timeout)
     wrapper = control.wrapper_object()
 
     print(
-        f"[DEBUG] ListItem: "
-        f"auto_id={wrapper.element_info.automation_id!r}"
+        f"[DEBUG] คลิก ListItem: "
+        f"auto_id={wrapper.element_info.automation_id!r}, "
+        f"title={wrapper.window_text()!r}"
     )
 
-    for click_round in range(1, 3):
-        try:
-            wrapper.select()
-
-            print(
-                f"[DEBUG] select() สำเร็จ "
-                f"(ครั้งที่ {click_round}/2)"
-            )
-
-        except Exception as select_error:
-            print(
-                f"[DEBUG] select() ใช้ไม่ได้: {select_error} "
-                f"-> ใช้ click_input()"
-            )
-            wrapper.click_input()
-
-        time.sleep(0.1)
-
-        try:
-            selected = wrapper.is_selected()
-
-            print(
-                f"[DEBUG] is_selected() = {selected} "
-                f"(ครั้งที่ {click_round}/2)"
-            )
-
-            if selected:
-                return wrapper
-
-        except Exception as error:
-            print(
-                f"[DEBUG] อ่าน is_selected() ไม่ได้: {error}"
-            )
-
-    # สำคัญ:
-    # อย่า throw ตรงนี้เพียงเพราะ UIA รายงาน False
-    # เพราะ Riposte custom ListItem อาจเลือกจริงแล้ว
-    print(
-        "[WARNING] UI Automation ไม่ยืนยันสถานะ selected "
-        "แต่ได้ส่งคำสั่งเลือกครบแล้ว -> ให้ขั้นตอนถัดไปตรวจสอบหน้าแทน"
-    )
-
+    wrapper.click_input()
     return wrapper
 
+
+def wait_for_page_change(window, page_before, timeout=5, poll_interval=0.2):
+    """รอจน Main pane เปลี่ยนเป็น auto_id ใหม่ที่ไม่ใช่ None."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        page_after = get_main_pane_auto_id(window)
+        if page_after is not None and page_after != page_before:
+            print(
+                f"[DEBUG] หน้าเปลี่ยนสำเร็จ: {page_before!r} -> {page_after!r}"
+            )
+            return page_after
+        time.sleep(poll_interval)
+    return None
+
+
+def select_list_item_and_advance(
+    window,
+    *,
+    item_auto_id,
+    item_control_type="ListItem",
+    expected_page_auto_id=None,
+    max_attempts=3,
+    item_timeout=10,
+    transition_timeout=4,
+):
+    """
+    เลือก ListItem แบบทนกับพฤติกรรม Riposte ที่บางครั้งคลิกครั้งแรกเป็นแค่ focus.
+
+    แต่ละ attempt จะ:
+      1) คลิก ListItem เพียง 1 ครั้ง
+      2) กด Submit/ถัดไปเพียง 1 ครั้ง
+      3) ตรวจว่าหน้าถัดไปมาจริง
+
+    ถ้ามี expected_page_auto_id จะใช้ auto_id ของหน้าถัดไปเป็นหลักฐานตรงๆ.
+    ถ้าไม่ระบุ จะตรวจว่า Main pane เปลี่ยน auto_id จริง โดยไม่ถือ None เป็น success.
+    """
+    last_error = None
+
+    for attempt in range(1, max_attempts + 1):
+        page_before = get_main_pane_auto_id(window)
+        print(
+            f"[DEBUG] เลือก {item_auto_id!r} และไปหน้าถัดไป "
+            f"(attempt {attempt}/{max_attempts}, page_before={page_before!r})"
+        )
+
+        try:
+            select_list_item(
+                window,
+                timeout=item_timeout,
+                auto_id=item_auto_id,
+                control_type=item_control_type,
+            )
+            click_next(window)
+
+            if expected_page_auto_id:
+                if is_control_visible(
+                    window,
+                    timeout=transition_timeout,
+                    auto_id=expected_page_auto_id,
+                    control_type="Custom",
+                ):
+                    print(
+                        f"[DEBUG] ถึงหน้าที่คาดไว้แล้ว: {expected_page_auto_id!r}"
+                    )
+                    return True
+            else:
+                page_after = wait_for_page_change(
+                    window,
+                    page_before,
+                    timeout=transition_timeout,
+                )
+                if page_after is not None:
+                    return True
+
+            current_page = get_main_pane_auto_id(window)
+            print(
+                f"[WARNING] กดแล้วแต่ยังไม่ยืนยันว่าหน้าเปลี่ยน "
+                f"(current_page={current_page!r}) -> จะลองเลือกใหม่"
+            )
+
+        except Exception as error:
+            last_error = error
+            print(
+                f"[WARNING] เลือก/ไปหน้าถัดไปไม่สำเร็จ "
+                f"(attempt {attempt}/{max_attempts}): "
+                f"{type(error).__name__}: {error}"
+            )
+
+    dump_controls_on_failure(window, item_auto_id)
+    if last_error is not None:
+        raise last_error
+    raise PywinautoTimeoutError(
+        f"เลือก {item_auto_id!r} แล้วหน้าไม่เปลี่ยนหลังลอง {max_attempts} ครั้ง"
+    )
 
 def resolve_edit_wrapper(wrapper, timeout=1.5):
     """
@@ -520,29 +587,40 @@ def wait_for_alert_or_next_page(
 
 def handle_dangerous_goods_question(window, timeout=10):
     """
-    หน้าคำถามสินค้าอันตราย (EG.Shipping.DangerousGoodsQuestion) จะแทรกโผล่มา
-    หลังเลือกกล่องเสร็จ ไม่ได้โผล่ทุกครั้งแน่นอน (ยังไม่ยืนยัน) เลยเช็คก่อนว่า
-    เจอปุ่ม "Confirmed" ไหม ถ้าไม่เจอภายใน timeout สั้นๆ ก็ข้ามไปเงียบๆ ไม่ throw
+    ถ้าหน้า EG.Shipping.DangerousGoodsQuestion ปรากฏ ให้กด Confirmed แล้ว Submit 1 ครั้ง.
 
-    แก้: เจอบั๊กสำคัญ -- is_control_visible()/.wait() ของ pywinauto ถ้า
-    control ไม่ปรากฏจริง จะ "รอเต็ม timeout เสมอ" ก่อนถึงจะ timeout ออกมา
-    (ต่างจากตอนรอ control ที่คาดว่าจะเจอเร็ว ซึ่งรอเท่าที่ใช้จริงแล้ว return
-    ทันที) เดิม timeout=5 ตรงนี้ ถ้าหน้านี้ไม่โผล่มา (ซึ่งหลังตอบ "Yes" ที่
-    Alert ทำรายการซ้ำแล้ว หน้านี้จะถูกข้ามไปเลยตามคอมเมนต์ที่
-    REPEAT_TRANSACTION_ALERT_YES_AUTO_ID) จะเสียเวลาเปล่า 5 วิทุกแถวโดยไม่รู้
-    ตัว -- นี่คือสาเหตุหลักจริงๆ ที่ทำให้รู้สึกช้าเท่าพิมพ์เอง ลดเหลือ 1.5 วิ
-    ถ้าจริงๆ แล้วหน้านี้เคยต้องใช้เวลานานกว่านี้กว่าจะโผล่ กรณีนั้น
-    recover_ui() (ที่ปรับปรุงแล้วให้ลอง ENTER/Home/ESC วนหลายรอบ) จะดักคืน
-    สถานะให้แทน ไม่ทำให้สคริปต์ตายทั้งตัว
+    ใช้ parent page auto_id กำกับก่อน เพื่อไม่ให้ไปจับปุ่มชื่อซ้ำจากหน้า/Alert อื่น.
+    ถ้าหน้านี้ถูกข้าม (เช่น reuse transaction) คืน False โดยไม่กดอะไรต่อ.
     """
-    if is_control_visible(
-        window, timeout=timeout, auto_id=DANGEROUS_GOODS_ANSWER_AUTO_ID, control_type="Button"
-    ):
-        print("[DEBUG] พบหน้าคำถามสินค้าอันตราย -> กด 'Confirmed' (ยืนยันว่าไม่มีสินค้าอันตราย)")
-        wait_and_click(window, auto_id=DANGEROUS_GOODS_ANSWER_AUTO_ID, control_type="Button")
-          # แก้: ลดจาก 1 วิ (ลด latency)
-        click_next(window)
+    try:
+        page = window.child_window(
+            auto_id=DANGEROUS_GOODS_PAGE_AUTO_ID,
+            control_type="Custom",
+        )
+        page.wait("exists visible", timeout=timeout)
+    except Exception:
+        print("[DEBUG] ไม่พบหน้า Dangerous Goods -> ถือว่าหน้านี้ถูกข้าม")
+        return False
 
+    answer = page.child_window(
+        auto_id=DANGEROUS_GOODS_ANSWER_AUTO_ID,
+        control_type="Button",
+    )
+    answer.wait("exists visible", timeout=timeout)
+    wrapper = answer.wrapper_object()
+
+    print("[DEBUG] พบหน้าคำถามสินค้าอันตราย")
+    print(f"        page auto_id   = {DANGEROUS_GOODS_PAGE_AUTO_ID!r}")
+    print(f"        answer auto_id = {wrapper.element_info.automation_id!r}")
+    print(f"        title          = {wrapper.window_text()!r}")
+    print("[DEBUG] กด 'Confirmed' (ค่าที่ผู้ใช้ยืนยันว่าต้องการ)")
+
+    # คลิก control ที่ระบุด้วย auto_id โดยตรง
+    wrapper.click_input()
+
+    # กด Submit เพียงครั้งเดียวภายใน handler นี้
+    click_next_verified(window, max_attempts=2, settle_time=0.3)
+    return True
 
 def handle_postcode_overlap_alert(window, timeout=10):
     """
@@ -666,46 +744,41 @@ def get_main_pane_auto_id(window):
 
 def click_next_verified(window, max_attempts=3, settle_time=0.5):
     """
-    แก้: ฟังก์ชันนี้เคยหายไปด้วยเช่นกัน -- ผู้ใช้สังเกตเจอว่าบางครั้งกด
-    "ถัดไป" แล้วปุ่ม "ไม่ติด" จริง (หน้าไม่เปลี่ยน) โดยเฉพาะหน้าข้อมูลผู้ส่ง
-    (customer) ที่บางครั้งค้างนิ่ง แต่ click_next() เดิมไม่เคยเช็คว่าหน้า
-    เปลี่ยนจริงหรือเปล่า เลยเดินหน้าไปเรียกฟังก์ชันถัดไป (เช่น กรอกที่อยู่)
-    ทั้งที่ยังอยู่หน้าเดิม -> เกิด error ตามมา
+    กดปุ่มถัดไปและยืนยันว่าหน้า Main เปลี่ยนจริง.
 
-    เช็ค auto_id ของ pane "Main" ก่อน/หลังกด ถ้ายังไม่เปลี่ยนให้ลองกดซ้ำ
-    (สูงสุด max_attempts ครั้ง) ถ้าลองครบแล้วยังไม่เปลี่ยน ให้แค่เตือนแล้ว
-    ปล่อยผ่านไปเลย (ไม่ throw หยุดสคริปต์ -- ตามที่ตกลงกันไว้ว่าข้ามได้ ไม่ต้อง
-    กรอกอะไรในหน้านี้)
-
-    แก้: เจอ settle_time โดนแก้เป็น 5 (จากการแก้ไฟล์เอง) อันตรายมาก เพราะ
-    ตัวนี้คือ time.sleep() จริง ไม่ใช่เพดาน .wait() แบบ timeout ตัวอื่นในไฟล์
-    นี้ -- รันเต็มจำนวนทุกครั้งไม่ว่าหน้าจะเปลี่ยนเร็วแค่ไหน และฟังก์ชันนี้ถูก
-    เรียกในลูป "3x" ทุกแถว เท่ากับเสียเวลาแน่นอนอย่างน้อย 3x5=15 วิ/แถว แบบ
-    หนีไม่พ้น (ต่างจาก timeout เพดานอื่นๆ ที่ถ้าหน้าเปลี่ยนเร็วจะไม่กระทบเลย)
-    ปรับกลับเป็น 0.5 ห้ามขึ้นสูงอีกเพราะกระทบความเร็วโดยตรงจริง
+    สำคัญ: get_main_pane_auto_id() คืน None ไม่ถือว่า success อีกต่อไป เพราะ None
+    อาจเกิดจาก UI กำลัง render/มี overlay/หา Main pane ไม่ได้ชั่วคราว.
     """
     page_before = get_main_pane_auto_id(window)
 
     for attempt in range(1, max_attempts + 1):
         click_next(window)
-        time.sleep(settle_time)
-        page_after = get_main_pane_auto_id(window)
 
-        if page_after != page_before or page_after is None:
+        # settle_time ยังเก็บไว้เป็น delay สั้นมากเพื่อให้ UI เริ่ม transition
+        if settle_time > 0:
+            time.sleep(settle_time)
+
+        page_after = wait_for_page_change(
+            window,
+            page_before,
+            timeout=3,
+            poll_interval=0.2,
+        )
+
+        if page_after is not None:
             return True
 
         print(
-            f"[WARNING] กดถัดไปแล้วหน้ายังไม่เปลี่ยน (auto_id เดิม={page_before!r}) "
+            f"[WARNING] กดถัดไปแล้วไม่พบหลักฐานว่าหน้าเปลี่ยน "
+            f"(auto_id เดิม={page_before!r}) "
             f"ลองกดซ้ำ ({attempt}/{max_attempts})"
         )
 
     print(
         "[WARNING] กดถัดไปครบ "
-        f"{max_attempts} ครั้งแล้วหน้ายังไม่เปลี่ยน -- ข้ามไปเลยตามที่ตกลงกันไว้ "
-        "(ไม่ให้สคริปต์ค้าง)"
+        f"{max_attempts} ครั้งแล้วหน้ายังไม่เปลี่ยน"
     )
     return False
-
 
 def report_validation_errors(window, timeout=1):
     """
@@ -1081,17 +1154,11 @@ def capture_tracking_number(window, timeout=10):
 
 def recover_ui(main_window, max_attempts=5):
     """
-    พยายามกลับสู่หน้าแรก
+    พยายามกลับสู่หน้าแรกโดยไม่ยิง ENTER แบบ global.
 
-    แก้: ของเดิมลองกดปุ่ม "หน้าหลัก" ครั้งเดียว แล้วค่อย fallback เป็น ESC
-    ล้วนๆ วนหลายรอบ -- ปัญหาคือถ้ามี Alert ค้างอยู่ (เช่น
-    EG.CustomerCapture.AddressSearchFailed ที่ต้องกด "ตกลง"/ENTER ก่อนถึง
-    จะปิดได้ ยืนยันจาก control dump จริงแล้ว หรือ Alert อื่นที่ยังไม่เจอ
-    auto_id) ปุ่มหน้าหลักและ ESC จะกดไม่ติดเลยเพราะ Alert บังอยู่ ทำให้
-    recover_ui() ล้มเหลวทั้งที่จริงๆ กดปิด Alert ตัวเดียวก็กลับมาได้แล้ว
-    -- เปลี่ยนมาวนแต่ละรอบให้กด ENTER ก่อนเสมอ (ปิด Alert ที่มีปุ่ม default
-    เป็น accept) แล้วค่อยลองปุ่มหน้าหลัก แล้วค่อย ESC ในรอบเดียวกัน เพิ่ม
-    โอกาสกู้คืนสำเร็จโดยไม่ต้องรู้ auto_id ของทุก Alert ที่เป็นไปได้ล่วงหน้า
+    ENTER ใน Riposte เป็น default action ของหลายหน้า/Alert จึงอาจยืนยันค่าที่ไม่
+    ต้องการ (รวมถึง flow สินค้าอันตราย) ได้. Recovery จะจัดการเฉพาะ Alert ที่เรา
+    รู้ auto_id แน่นอน แล้วลองปุ่ม Home และ ESC เท่านั้น.
     """
     print("[DEBUG] กำลังพยายามกู้คืนหน้าจอ")
 
@@ -1101,30 +1168,46 @@ def recover_ui(main_window, max_attempts=5):
         pass
 
     for attempt in range(1, max_attempts + 1):
-
-        # ห้ามส่ง ENTER แบบ global ตรงนี้
-        # เพราะไม่รู้ว่าขณะนั้น Riposte อยู่หน้า/Alert อะไร
-
+        # ถ้าอยู่หน้าแรกแล้ว ไม่ต้องกดอะไร
         if is_control_visible(
             main_window,
-            timeout=10,
+            timeout=1,
             auto_id=HOME_AUTO_ID,
             control_type=HOME_CONTROL_TYPE,
         ):
             print(f"[DEBUG] อยู่หน้าแรกแล้ว (รอบที่ {attempt})")
             return True
 
-        # ลองกดปุ่ม "หน้าหลัก" โดยตรง
+        # ปิดเฉพาะ Alert เชื่อมต่อระบบไม่ได้ที่รู้ auto_id แน่นอน
+        try:
+            if is_control_visible(
+                main_window,
+                timeout=0.5,
+                auto_id=ADDRESS_SEARCH_FAILED_ALERT_AUTO_ID,
+                control_type="Custom",
+            ):
+                print("[DEBUG] Recovery: พบ AddressSearchFailed -> ปิดด้วย AcceptButton")
+                wait_and_click(
+                    main_window,
+                    timeout=2,
+                    auto_id=ADDRESS_SEARCH_FAILED_ACCEPT_AUTO_ID,
+                    control_type="Button",
+                )
+        except Exception as error:
+            print(f"[DEBUG] Recovery: ปิด AddressSearchFailed ไม่สำเร็จ: {error}")
+
+        # ลองปุ่มหน้าหลักโดย auto_id
         try:
             home_button = main_window.child_window(
-                auto_id=HOME_BUTTON_AUTO_ID, control_type="Button"
+                auto_id=HOME_BUTTON_AUTO_ID,
+                control_type="Button",
             )
-            home_button.wait("exists visible", timeout=10)
+            home_button.wait("exists visible", timeout=2)
             home_button.wrapper_object().click_input()
 
             if is_control_visible(
                 main_window,
-                timeout=10,
+                timeout=3,
                 auto_id=HOME_AUTO_ID,
                 control_type=HOME_CONTROL_TYPE,
             ):
@@ -1133,12 +1216,12 @@ def recover_ui(main_window, max_attempts=5):
         except Exception as error:
             print(f"[DEBUG] กดปุ่มหน้าหลักไม่สำเร็จ (รอบที่ {attempt}): {error}")
 
-        # fallback เป็นการกด ESC
+        # fallback ESC (ปลอดภัยกว่า ENTER สำหรับ recovery)
         send_keys("{ESC}")
 
         if is_control_visible(
             main_window,
-            timeout=1,
+            timeout=2,
             auto_id=HOME_AUTO_ID,
             control_type=HOME_CONTROL_TYPE,
         ):
@@ -1146,11 +1229,10 @@ def recover_ui(main_window, max_attempts=5):
             return True
 
     print(
-        "[ERROR] กู้คืนหน้าจอไม่สำเร็จ ไม่พบหน้าแรกหลังลองทั้ง ENTER/ปุ่มหน้าหลัก/ESC "
+        "[ERROR] กู้คืนหน้าจอไม่สำเร็จหลังลองปุ่มหน้าหลัก/ESC "
         f"{max_attempts} ครั้ง -- ควรหยุดสคริปต์และตรวจสอบหน้าจอด้วยตนเอง"
     )
     return False
-
 
 def export_controls(main_window):
     """บันทึกรายชื่อ control ทั้งหมดลง controls.txt (ใช้ตรวจ title/control_type/auto_id จริง)"""
@@ -1323,63 +1405,34 @@ def main():
                         # เอง) กลับมาที่จุดนี้เหมือนเดิม
                         handle_repeat_transaction_alert(main_window)
 
-                        # แก้: เจอบั๊กจริงที่ผู้ใช้ยืนยันด้วยมือ -- คลิกด้วย
-                        # click_input() ธรรมดา (ผ่าน wait_and_click) แล้วกด
-                        # "ถัดไป" ต่อ หน้าจอไม่เปลี่ยนไปไหนเลย ใช้
-                        # select_list_item() แทน (ดูคอมเมนต์เต็มที่ฟังก์ชันนั้น
-                        # ด้านบน -- เลือกผ่าน SelectionItemPattern ตรงๆ ไม่พึ่ง
-                        # พิกัดจอ พร้อมยืนยันว่าเลือกติดจริงก่อนไปต่อ)
-                        select_list_item(
+                        # เลือกประเภทกล่อง MailPieceShape_9 แล้วกดถัดไป.
+                        # Riposte บางครั้งคลิกครั้งแรกเป็นแค่ focus จึงไม่ double-click
+                        # แบบตายตัว แต่ใช้ "คลิก 1 ครั้ง -> Submit -> ตรวจหน้าถัดไป";
+                        # ถ้ายังไม่ถึง EG.Shipping.MailPieceShape ค่อยลองรอบถัดไป.
+                        select_list_item_and_advance(
                             main_window,
-                            auto_id=BOX_TYPE_AUTO_ID,
-                            control_type="ListItem",
+                            item_auto_id=BOX_TYPE_AUTO_ID,
+                            expected_page_auto_id=MAILPIECE_SHAPE_PAGE_AUTO_ID,
+                            max_attempts=3,
+                            item_timeout=10,
+                            transition_timeout=4,
                         )
 
-                        # แก้: เพิ่มชั้นป้องกันอีกชั้น (defense-in-depth) ใช้
-                        # click_next_verified() แทน click_next() ธรรมดา --
-                        # เช็คว่าหน้าเปลี่ยนจริงหลังกด ถ้าไม่เปลี่ยนจะลองกดซ้ำ
-                        # เอง (เผื่อกรณีอื่นที่ select_list_item() แก้ปัญหา
-                        # หลักไปแล้วแต่ยังมีเคสขอบๆ ที่หน้าไม่ขยับอีก)
-                        click_next_verified(main_window)  # ถัดไป (หลังเลือกกล่อง)
-
-                        # แก้: ผู้ใช้ส่ง controls dump จริงมาแล้วยืนยันว่ามีหน้า
-                        # แทรกใหม่ตรงนี้ (pane auto_id="EG.Shipping.
-                        # MailPieceShape") ที่โค้ดไม่เคยรู้จักมาก่อนเลย ทำให้
-                        # กด "ถัดไป" ไปแล้วโดน MailPieceShapeSelectionError
-                        # Message เตือนแล้วค้างอยู่หน้าเดิม -- เลือก
-                        # MailPieceShape_ModelId-303 (ยืนยันจากผู้ใช้ว่าคือ
-                        # กล่องที่ใช้จริง) ด้วย select_list_item() เดียวกับที่
-                        # ใช้แก้หน้าเลือกกล่องไปแล้ว จากนั้นกด "ถัดไป" ผ่าน
-                        # กลุ่มคุณลักษณะพัสดุ (LQ/FR/LI/AN/SO/BO) ที่โผล่มาบน
-                        # หน้าเดียวกันได้เลยโดยไม่ต้องเลือกอะไร (ผู้ใช้ยืนยัน
-                        # แล้วว่า "ไม่ใช้ครับ แค่กดถัดไป")
-                        select_list_item(
+                        # ถึงหน้า EG.Shipping.MailPieceShape แล้ว เลือก ModelId-303.
+                        # ขั้นนี้ไม่บังคับ expected DangerousGoods เพราะบาง transaction
+                        # อาจ reuse ค่าเดิมและข้ามหน้าคำถามไปได้; ใช้การเปลี่ยน Main pane
+                        # เป็นหลักฐานแทน และจะไม่ถือ None เป็น success.
+                        select_list_item_and_advance(
                             main_window,
-                            auto_id=MAILPIECE_SHAPE_VARIANT_AUTO_ID,
-                            control_type="ListItem",
+                            item_auto_id=MAILPIECE_SHAPE_VARIANT_AUTO_ID,
+                            max_attempts=3,
+                            item_timeout=10,
+                            transition_timeout=4,
                         )
-                        click_next_verified(main_window)  # ถัดไป (ข้ามกลุ่มคุณลักษณะพัสดุ)
 
-                        # แก้: ยกเลิก race-guard ที่เพิ่มไว้ตอน audit หาจุดช้า
-                        # ทั้งไฟล์ -- เจอบั๊กจริงจากผู้ใช้ทดสอบ: กด Confirmed
-                        # ถูกต้องแล้ว แต่กลับมี warning ขึ้นแล้วเด้งกลับหน้าแรก
-                        # สาเหตุคือ SUBMIT_AUTO_ID ("LocalCommand_Submit") ที่
-                        # ใช้เป็น safe_criteria ไม่ใช่สัญญาณเฉพาะหน้านี้จริงๆ --
-                        # ยืนยันจาก controls dump จริงแล้วว่าปุ่ม "ยืนยัน"
-                        # (LocalCommand_Submit) เป็นปุ่ม footer ที่ติดอยู่ทุกหน้า
-                        # เสมอ (รวมถึงหน้าคำถามสินค้าอันตรายเองด้วย ที่มีทั้ง
-                        # Declined/Confirmed และ LocalCommand_Submit โผล่พร้อม
-                        # กัน) เท่ากับ race นี้เจอ "safe" เกือบทันทีทุกครั้ง
-                        # (ไม่ว่าจะอยู่หน้าคำถามจริงหรือไม่) เลยข้ามการเรียก
-                        # handle_dangerous_goods_question() ไปกด Submit ตรงๆ
-                        # โดยยังไม่ได้ตอบคำถามเคลิร์กก่อน -- ต่างจากจุด race
-                        # อื่นที่ปลอดภัย (SHIPPING_SERVICE_AUTO_ID, ปุ่ม "ไม่")
-                        # เพราะสองจุดนั้นเป็น control เฉพาะหน้าจริงๆ ไม่ใช่
-                        # ปุ่ม footer สากลแบบนี้ -- กลับไปเรียกแบบตรงไปตรงมา
-                        # เหมือนเดิม (ยอมเสียเวลาส่วนนี้ไปเพื่อความถูกต้อง)
+                        # ถ้าหน้าสินค้าอันตรายปรากฏ ให้กด Confirmed + Submit ภายใน
+                        # handler เพียงครั้งเดียว. ถ้าหน้าถูกข้าม handler จะไม่กดอะไร.
                         handle_dangerous_goods_question(main_window)
-
-                        click_next(main_window)  # ยืนยัน (ปุ่มเดียวกัน auto_id)
 
                         # น้ำหนัก
                         # แก้: เพิ่ม auto_id="LabelForTextBox" ระบุให้เจาะจงว่า
