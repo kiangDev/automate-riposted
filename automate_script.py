@@ -235,85 +235,58 @@ def wait_and_click(window, timeout=10, wait_states="exists visible enabled", **c
 
 
 def select_list_item(window, timeout=10, max_attempts=2, **criteria):
-    last_error = None
-
-    for attempt in range(1, max_attempts + 1):
-        try:
-            control = window.child_window(**criteria)
-            control.wait("exists visible enabled", timeout=timeout)
-            wrapper = control.wrapper_object()
-
-            for click_round in range(1, 3):
-                try:
-                    wrapper.select()
-                    print(
-                        f"[DEBUG] select() สำเร็จ "
-                        f"(attempt {attempt}/{max_attempts}, "
-                        f"ครั้งที่ {click_round}/2)"
-                    )
-                except Exception as select_error:
-                    print(
-                        f"[DEBUG] .select() ใช้ไม่ได้ ({select_error}) "
-                        "-> fallback click_input()"
-                    )
-                    wrapper.click_input()
-
-                time.sleep(0.1)
-
-                # เช็คหลังทุกครั้ง
-                try:
-                    if wrapper.is_selected():
-                        print(
-                            f"[DEBUG] ListItem ติดสถานะเลือกแล้ว "
-                            f"(ครั้งที่ {click_round}/2)"
-                        )
-                        return wrapper
-                except Exception:
-                    # control บางตัวไม่มี SelectionItemPattern
-                    if click_round == 2:
-                        print(
-                            "[DEBUG] control ไม่รองรับ is_selected() "
-                            "แต่กดครบ 2 ครั้งแล้ว -> ถือว่าสำเร็จ"
-                        )
-                        return wrapper
-
-            last_error = RuntimeError(
-                "is_selected() ยังเป็น False หลังพยายามเลือก 2 ครั้ง"
-            )
-
-            print(
-                f"[DEBUG] ยังเลือกไม่สำเร็จ "
-                f"(attempt {attempt}/{max_attempts}) -> ลองใหม่"
-            )
-
-        except Exception as error:
-            last_error = error
-            print(
-                f"[DEBUG] เลือก ListItem ไม่สำเร็จ "
-                f"(attempt {attempt}/{max_attempts}): {error}"
-            )
+    control = window.child_window(**criteria)
+    control.wait("exists visible enabled", timeout=timeout)
+    wrapper = control.wrapper_object()
 
     print(
-        f"[ERROR] เลือก ListItem ไม่ติดสถานะหลังลอง "
-        f"{max_attempts} attempts: {criteria}"
+        f"[DEBUG] ListItem: "
+        f"auto_id={wrapper.element_info.automation_id!r}"
     )
 
-    tag = (
-        criteria.get("title_re")
-        or criteria.get("title")
-        or criteria.get("auto_id")
-        or "unknown"
+    for click_round in range(1, 3):
+        try:
+            wrapper.select()
+
+            print(
+                f"[DEBUG] select() สำเร็จ "
+                f"(ครั้งที่ {click_round}/2)"
+            )
+
+        except Exception as select_error:
+            print(
+                f"[DEBUG] select() ใช้ไม่ได้: {select_error} "
+                f"-> ใช้ click_input()"
+            )
+            wrapper.click_input()
+
+        time.sleep(0.1)
+
+        try:
+            selected = wrapper.is_selected()
+
+            print(
+                f"[DEBUG] is_selected() = {selected} "
+                f"(ครั้งที่ {click_round}/2)"
+            )
+
+            if selected:
+                return wrapper
+
+        except Exception as error:
+            print(
+                f"[DEBUG] อ่าน is_selected() ไม่ได้: {error}"
+            )
+
+    # สำคัญ:
+    # อย่า throw ตรงนี้เพียงเพราะ UIA รายงาน False
+    # เพราะ Riposte custom ListItem อาจเลือกจริงแล้ว
+    print(
+        "[WARNING] UI Automation ไม่ยืนยันสถานะ selected "
+        "แต่ได้ส่งคำสั่งเลือกครบแล้ว -> ให้ขั้นตอนถัดไปตรวจสอบหน้าแทน"
     )
-    safe_tag = "".join(
-        ch for ch in str(tag) if ch.isalnum()
-    )[:30] or "unknown"
 
-    dump_controls_on_failure(window, safe_tag)
-
-    if last_error:
-        raise last_error
-
-    raise RuntimeError(f"เลือก ListItem ไม่สำเร็จ: {criteria}")
+    return wrapper
 
 
 def resolve_edit_wrapper(wrapper, timeout=1.5):
@@ -1128,9 +1101,9 @@ def recover_ui(main_window, max_attempts=5):
         pass
 
     for attempt in range(1, max_attempts + 1):
-        # แก้: กด ENTER ก่อนทุกรอบ เผื่อมี Alert ค้างปุ่ม default (accept)
-        # บังปุ่มหน้าหลัก/ESC อยู่ (เช่น AddressSearchFailed Alert)
-        send_keys("{ENTER}")
+
+        # ห้ามส่ง ENTER แบบ global ตรงนี้
+        # เพราะไม่รู้ว่าขณะนั้น Riposte อยู่หน้า/Alert อะไร
 
         if is_control_visible(
             main_window,
@@ -1138,7 +1111,7 @@ def recover_ui(main_window, max_attempts=5):
             auto_id=HOME_AUTO_ID,
             control_type=HOME_CONTROL_TYPE,
         ):
-            print(f"[DEBUG] กลับมาหน้าแรกสำเร็จ (ENTER ปิด Alert, รอบที่ {attempt})")
+            print(f"[DEBUG] อยู่หน้าแรกแล้ว (รอบที่ {attempt})")
             return True
 
         # ลองกดปุ่ม "หน้าหลัก" โดยตรง
