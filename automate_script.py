@@ -234,7 +234,7 @@ def wait_and_click(window, timeout=10, wait_states="exists visible enabled", **c
         raise
 
 
-def select_list_item(window, timeout=10, max_attempts=2, **criteria):
+def select_list_item(window, timeout=20, max_attempts=2, **criteria):
     """
     แก้: เจอบั๊กจริงที่ผู้ใช้ยืนยันด้วยมือแล้ว (ลองคลิกกล่อง+กด "ถัดไป" เอง)
     -- เดิม wait_and_click() เลือกกล่อง (control_type="ListItem") ด้วย
